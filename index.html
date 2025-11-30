@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Casino Dashboard</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: '#0C0A16',
+            casinoCard: '#151226',
+            casinoPurple: '#A56BFF',
+            casinoGlow: '#CFAAFF'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui'] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+</head>
+
+<body class="bg-casinoDark font-sans text-white antialiased">
+
+  <div id="app" class="min-h-screen pb-20">
+
+    <!-- Header -->
+    <div class="px-5 py-6 flex items-center justify-between">
+      <div>
+        <div class="text-lg font-semibold">
+          Welcome back, <span class="font-bold text-casinoPurple">{{ user }}</span> 🎰
+        </div>
+        <div class="text-sm text-gray-400">Ready to play & win?</div>
+      </div>
+      <div class="flex gap-3">
+        <span class="p-2 rounded-full bg-casinoCard shadow">
+          <i data-lucide="wallet" class="text-gray-300"></i>
+        </span>
+        <span class="p-2 rounded-full bg-casinoCard shadow">
+          <i data-lucide="bell" class="text-gray-300"></i>
+        </span>
+      </div>
+    </div>
+
+    <!-- Balance -->
+    <div class="px-5">
+      <div class="rounded-2xl p-5 bg-gradient-to-r from-casinoPurple to-casinoGlow text-white shadow-xl">
+        <div class="text-sm opacity-80">Available Balance</div>
+        <div class="text-3xl font-extrabold">{{ balance }}</div>
+      </div>
+      <button
+        @click="deposit"
+        class="w-full mt-4 py-3 rounded-full font-semibold bg-casinoPurple text-white flex justify-center items-center gap-2">
+        <i data-lucide="arrow-big-up"></i> Deposit
+      </button>
+    </div>
+
+    <!-- Game Slider Section -->
+    <div class="px-5 mt-8">
+      <div class="text-lg font-semibold mb-3">🎮 Popular Casino Games</div>
+
+      <div class="flex gap-4 overflow-x-auto pb-3">
+        
+        <div v-for="game in games" class="min-w-[150px] rounded-xl bg-casinoCard p-3 shadow-lg">
+          <img :src="game.img" class="rounded-lg h-24 w-full object-cover" />
+          <div class="mt-2 font-semibold text-sm">{{ game.name }}</div>
+          <button class="mt-2 w-full py-1 text-xs rounded bg-casinoPurple text-white font-semibold">
+            Play Now
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Recent Bets -->
+    <div class="px-5 mt-8">
+      <div class="flex justify-between mb-3">
+        <div class="font-medium">Recent Bets</div>
+        <div class="text-sm text-casinoPurple font-semibold">View all</div>
+      </div>
+
+      <div class="space-y-3">
+        <div class="flex items-center p-3 rounded-xl bg-casinoCard">
+          <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-casinoPurple/20">
+            <i data-lucide="dice-6" class="text-casinoPurple"></i>
+          </div>
+          <div class="ml-3 flex-1">
+            <div class="text-sm font-semibold">Lucky Dice</div>
+            <div class="text-xs text-gray-400">Won • ₦2,500</div>
+          </div>
+          <div class="text-sm font-semibold text-green-400">+₦2,500</div>
+        </div>
+
+        <div class="flex items-center p-3 rounded-xl bg-casinoCard">
+          <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-casinoPurple/20">
+            <i data-lucide="coins" class="text-casinoPurple"></i>
+          </div>
+          <div class="ml-3 flex-1">
+            <div class="text-sm font-semibold">Slots Machine</div>
+            <div class="text-xs text-gray-400">Lost • ₦500</div>
+          </div>
+          <div class="text-sm font-semibold text-red-400">-₦500</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!--Bottom Navigation-->
+  <div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+    <a href="#" class="flex flex-col items-center">
+      <i data-lucide="home" class="text-casinoPurple"></i>
+      <span class="text-xs text-casinoPurple mt-1">Home</span>
+    </a>
+    <a href="#" class="flex flex-col items-center">
+      <i data-lucide="gamepad-2" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Games</span>
+    </a>
+    <a href="#" class="flex flex-col items-center">
+      <i data-lucide="bar-chart" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Bets</span>
+    </a>
+    <a href="#" class="flex flex-col items-center">
+      <i data-lucide="user" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Profile</span>
+    </a>
+  </div>
+
+  <script>
+    const { createApp } = Vue
+
+    createApp({
+      data() {
+        return {
+          user: "favour",
+          balance: "₦50,000",
+          games: [
+            { name: "Slots Machine", img: "https://i.imgur.com/6q1zQ7L.jpeg" },
+            { name: "Lucky Dice", img: "https://i.imgur.com/RibCQ57.jpeg" },
+            { name: "Roulette Spin", img: "https://i.imgur.com/Eo1Tn3Z.jpeg" },
+            { name: "Blackjack 21", img: "https://i.imgur.com/AKWUp5y.jpeg" },
+            { name: "Fortune Wheel", img: "https://i.imgur.com/0zcQbFm.jpeg" }
+          ]
+        }
+      },
+      mounted() {
+        lucide.createIcons();
+      },
+      methods: {
+        deposit() {
+          alert("Deposit clicked");
+        }
+      }
+    }).mount('#app')
+  </script>
+
+</body>
+</html>
