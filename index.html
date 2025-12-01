@@ -195,18 +195,18 @@
 
             } else {
               this.balance = "Kindly Login";
-              this.depositText = "Login Account";
+              this.depositText = "login dashboard";
             }
 
           } catch (e) {
             this.balance = "Kindly Login";
-            this.depositText = "Login Account";
+            this.depositText = "login dashboard";
           }
         },
 
         deposit() {
           if (!this.token) {
-            window.location.href = "login.html";
+            window.location.href = "/login";
             return;
           }
 
