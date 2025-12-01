@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: '#0C0A16',
+            casinoCard: '#151226',
+            casinoPurple: '#A56BFF',
+            casinoGlow: '#CFAAFF'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui'] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+</head>
+
+<body class="bg-casinoDark text-white font-sans flex items-center justify-center min-h-screen px-6">
+
+<div id="app" class="w-full max-w-md">
+
+  <!-- Logo / Header -->
+  <div class="text-center mb-10">
+      <h1 class="text-3xl font-extrabold text-casinoPurple">Welcome Back</h1>
+      <p class="text-gray-400 mt-1">Login to continue</p>
+  </div>
+
+  <!-- LOGIN CARD -->
+  <div class="bg-casinoCard p-8 rounded-2xl shadow-2xl">
+
+    <!-- Username / Email -->
+    <label class="text-sm text-gray-300">Username or Email</label>
+    <input v-model="login"
+      class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Enter username or email">
+
+    <!-- Password -->
+    <label class="text-sm text-gray-300">Password</label>
+    <input v-model="password" type="password"
+      class="w-full mt-1 mb-6 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Enter password">
+
+    <!-- Login Button -->
+    <button @click="submitLogin"
+      class="w-full py-3 rounded-xl bg-casinoPurple font-semibold text-white flex justify-center items-center gap-2">
+      <i data-lucide="log-in"></i> Login
+    </button>
+
+    <!-- Error -->
+    <div v-if="error" class="mt-4 text-center text-red-400 text-sm">
+      {{ error }}
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      login: "",
+      password: "",
+      error: "",
+      site_domain: "coinsphare.online"   // hidden & auto-sent
+    }
+  },
+  mounted() {
+    lucide.createIcons();
+  },
+  methods: {
+    async submitLogin() {
+      this.error = "";
+
+      if (!this.login || !this.password) {
+        this.error = "All fields are required";
+        return;
+      }
+
+      const payload = {
+        login: this.login,
+        password: this.password,
+        site_domain: this.site_domain
+      };
+
+      try {
+        const res = await fetch("https://favour-amaaavl.xyz/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!data.status) {
+          this.error = data.message || "Invalid login details";
+          return;
+        }
+
+        // SAVE TOKEN + USER
+        localStorage.setItem("casino_token", data.token);
+        localStorage.setItem("casino_user", JSON.stringify(data.user));
+
+        // REDIRECT TO DASHBOARD
+        window.location.href = "https://your-domain.com";
+
+      } catch (e) {
+        this.error = "Network error, try again.";
+      }
+    }
+  }
+}).mount("#app");
+</script>
+
+</body>
+</html>
