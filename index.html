@@ -64,7 +64,7 @@
       <button
         @click="deposit"
         class="w-full mt-4 py-3 rounded-full font-semibold bg-casinoPurple text-white flex justify-center items-center gap-2">
-        <i data-lucide="arrow-big-up"></i> Deposit
+        <i data-lucide="arrow-big-up"></i> {{ depositText }}
       </button>
     </div>
 
@@ -93,27 +93,31 @@
       </div>
 
       <div class="space-y-3">
-        <div class="flex items-center p-3 rounded-xl bg-casinoCard">
+
+        <div 
+          v-for="trx in recent"
+          class="flex items-center p-3 rounded-xl bg-casinoCard"
+        >
           <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-casinoPurple/20">
             <i data-lucide="dice-6" class="text-casinoPurple"></i>
           </div>
           <div class="ml-3 flex-1">
-            <div class="text-sm font-semibold">Lucky Dice</div>
-            <div class="text-xs text-gray-400">Won • ₦2,500</div>
+            <div class="text-sm font-semibold">{{ trx.details }}</div>
+            <div class="text-xs text-gray-400">
+              {{ trx.status }} • {{ trx.amount }}
+            </div>
           </div>
-          <div class="text-sm font-semibold text-green-400">+₦2,500</div>
+
+          <!-- Amount color -->
+          <div 
+            class="text-sm font-semibold"
+            :class="trx.trx_type === '+' ? 'text-green-400' : trx.trx_type === '-' ? 'text-red-400' : 'text-yellow-400'"
+          >
+            {{ trx.trx_type }}{{ trx.amount.replace('NGN','₦') }}
+          </div>
+
         </div>
 
-        <div class="flex items-center p-3 rounded-xl bg-casinoCard">
-          <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-casinoPurple/20">
-            <i data-lucide="coins" class="text-casinoPurple"></i>
-          </div>
-          <div class="ml-3 flex-1">
-            <div class="text-sm font-semibold">Slots Machine</div>
-            <div class="text-xs text-gray-400">Lost • ₦500</div>
-          </div>
-          <div class="text-sm font-semibold text-red-400">-₦500</div>
-        </div>
       </div>
     </div>
 
@@ -140,13 +144,16 @@
   </div>
 
   <script>
-    const { createApp } = Vue
+    const { createApp } = Vue;
 
     createApp({
       data() {
         return {
-          user: "favour",
-          balance: "₦50,000",
+          user: "Guest",
+          balance: "Kindly Login",
+          depositText: "Login Account",
+          token: "",
+          recent: [],
           games: [
             { name: "Slots Machine", img: "https://i.imgur.com/6q1zQ7L.jpeg" },
             { name: "Lucky Dice", img: "https://i.imgur.com/RibCQ57.jpeg" },
@@ -156,15 +163,57 @@
           ]
         }
       },
+
       mounted() {
         lucide.createIcons();
+        this.token = localStorage.getItem("USER_TOKEN");
+
+        if (!this.token) return;
+
+        this.fetchUser();
       },
+
       methods: {
+        async fetchUser() {
+          try {
+            const res = await fetch("https://favour-amaaavl.xyz/api/user/details", {
+              headers: {
+                "Authorization": "Bearer " + this.token
+              }
+            });
+
+            const data = await res.json();
+
+            if (data.status === true) {
+              const u = data.user;
+
+              this.user = u.firstname;
+              this.balance = "₦" + Number(u.balance).toLocaleString();
+              this.depositText = "Deposit";
+
+              this.recent = data.transactions;
+
+            } else {
+              this.balance = "Kindly Login";
+              this.depositText = "Login Account";
+            }
+
+          } catch (e) {
+            this.balance = "Kindly Login";
+            this.depositText = "Login Account";
+          }
+        },
+
         deposit() {
+          if (!this.token) {
+            window.location.href = "login.html";
+            return;
+          }
+
           alert("Deposit clicked");
         }
       }
-    }).mount('#app')
+    }).mount('#app');
   </script>
 
 </body>
