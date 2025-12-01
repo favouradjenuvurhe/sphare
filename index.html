@@ -108,14 +108,12 @@
             </div>
           </div>
 
-          <!-- Amount color -->
           <div 
             class="text-sm font-semibold"
             :class="trx.trx_type === '+' ? 'text-green-400' : trx.trx_type === '-' ? 'text-red-400' : 'text-yellow-400'"
           >
             {{ trx.trx_type }}{{ trx.amount.replace('NGN','₦') }}
           </div>
-
         </div>
 
       </div>
@@ -166,7 +164,9 @@
 
       mounted() {
         lucide.createIcons();
-        this.token = localStorage.getItem("USER_TOKEN");
+
+        // 🔥 UPDATED — MATCH YOUR LOGIN PAGE EXACTLY
+        this.token = localStorage.getItem("casino_token");
 
         if (!this.token) return;
 
@@ -217,4 +217,4 @@
   </script>
 
 </body>
-</html>
+              </html>
