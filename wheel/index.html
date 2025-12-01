@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wheel & Deal Casino</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: '#0C0A16',
+            casinoCard: '#151226',
+            casinoPurple: '#A56BFF',
+            casinoGlow: '#CFAAFF'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui'] }
+        }
+      }
+    }
+  </script>
+
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+</head>
+
+<body class="bg-casinoDark font-sans text-white antialiased">
+
+<div id="app" class="min-h-screen pb-20">
+
+  <!-- Available Balance -->
+  <div class="px-5 mt-6">
+    <div class="text-sm opacity-80">Available Balance</div>
+    <div class="text-3xl font-extrabold mb-4">{{ balance }}</div>
+  </div>
+
+  <!-- Wheel & Deal Game -->
+  <div class="px-5 mt-4">
+    <div class="text-lg font-semibold mb-3">🎡 Wheel & Deal</div>
+
+    <div class="flex flex-col items-center gap-4">
+
+      <!-- Wheel -->
+      <div class="w-64 h-64 rounded-full border-8 border-casinoPurple relative flex items-center justify-center overflow-hidden shadow-lg">
+        <div :style="{ transform: 'rotate(' + wheelRotation + 'deg)' }" class="absolute w-full h-full transition-transform duration-1000 ease-out">
+          <div v-for="(segment,index) in wheelSegments" :key="index"
+               class="absolute w-full h-full flex items-center justify-center"
+               :style="`transform: rotate(${index * 60}deg)`">
+            <div class="w-1/2 text-center text-sm font-semibold" :class="segment.color">{{ segment.name }}</div>
+          </div>
+        </div>
+        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-casinoPurple rounded-full shadow-lg z-10"></div>
+      </div>
+
+      <!-- Bet Input -->
+      <div class="flex gap-3 w-full">
+        <input type="number" v-model="betAmount" placeholder="Enter Bet" class="flex-1 p-3 rounded-xl bg-casinoCard text-white" />
+        <button @click="spinWheel" class="py-3 px-5 bg-casinoPurple rounded-xl font-semibold text-white">Spin</button>
+      </div>
+
+      <!-- Spin Result -->
+      <div v-if="lastResult" class="mt-3 text-center text-lg font-semibold" :class="lastResult.color">
+        {{ lastResult.message }}
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Recent Bets -->
+  <div class="px-5 mt-8">
+    <div class="flex justify-between mb-3">
+      <div class="font-medium">Recent Bets</div>
+      <div class="text-sm text-casinoPurple font-semibold">View all</div>
+    </div>
+
+    <div class="space-y-3">
+      <div v-for="trx in recent" class="flex items-center p-3 rounded-xl bg-casinoCard">
+        <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-casinoPurple/20">
+          <i data-lucide="dice-6" class="text-casinoPurple"></i>
+        </div>
+        <div class="ml-3 flex-1">
+          <div class="text-sm font-semibold">{{ trx.details }}</div>
+          <div class="text-xs text-gray-400">{{ trx.status }} • {{ trx.amount }}</div>
+        </div>
+        <div class="text-sm font-semibold" :class="trx.trx_type === '+' ? 'text-green-400' : 'text-red-400'">
+          {{ trx.trx_type }}{{ trx.amount.replace('NGN','₦') }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Navigation -->
+<div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+  <a href="#" class="flex flex-col items-center">
+    <i data-lucide="home" class="text-casinoPurple"></i>
+    <span class="text-xs text-casinoPurple mt-1">Home</span>
+  </a>
+  <a href="#" class="flex flex-col items-center">
+    <i data-lucide="gamepad-2" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Games</span>
+  </a>
+  <a href="#" class="flex flex-col items-center">
+    <i data-lucide="bar-chart" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Bets</span>
+  </a>
+  <a href="#" class="flex flex-col items-center">
+    <i data-lucide="user" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Profile</span>
+  </a>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      token: "",
+      balance: 0,
+      betAmount: 0,
+      wheelRotation: 0,
+      lastResult: null,
+      recent: [],
+      wheelSegments: [
+        { name: "×2", color: "text-green-400", multiplier: 2 },
+        { name: "×3", color: "text-green-400", multiplier: 3 },
+        { name: "×0", color: "text-red-500", multiplier: 0 },
+        { name: "×5", color: "text-green-400", multiplier: 5 },
+        { name: "×0", color: "text-red-500", multiplier: 0 },
+        { name: "×10", color: "text-yellow-400", multiplier: 10 }
+      ]
+    }
+  },
+  mounted() {
+    lucide.createIcons();
+    this.token = localStorage.getItem("casino_token");
+    if (this.token) this.fetchUser();
+  },
+  methods: {
+    async fetchUser() {
+      try {
+        const res = await fetch("https://your-domain.com/api/user/details", {
+          headers: { "Authorization": "Bearer " + this.token }
+        });
+        const data = await res.json();
+        if (data.status) {
+          this.balance = data.user.balance;
+          this.recent = data.transactions;
+        }
+      } catch(e) { console.error(e); }
+    },
+    async spinWheel() {
+      if (this.betAmount <= 0 || this.betAmount > this.balance) {
+        alert("Invalid bet amount!");
+        return;
+      }
+
+      // Determine win/lose based on 30% win rate
+      const isWin = Math.random() < 0.3;
+      let multiplier = isWin ? this.wheelSegments[Math.floor(Math.random()*this.wheelSegments.length)].multiplier : 0;
+
+      const winAmount = Math.floor(this.betAmount * multiplier);
+
+      // Update wheel rotation visually
+      const spinDeg = 360 * 5 + Math.floor(Math.random() * 360);
+      this.wheelRotation += spinDeg;
+
+      // Debit bet from wallet
+      await fetch("https://your-domain.com/api/wallet/debit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: this.token,
+          amount: this.betAmount,
+          reference: "DEBIT" + Date.now(),
+          description: "Wheel Bet Deduction"
+        })
+      });
+
+      // Credit win if any
+      if (winAmount > 0) {
+        await fetch("https://your-domain.com/api/wallet/credit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: this.token,
+            amount: winAmount,
+            reference: "CREDIT" + Date.now(),
+            description: "Wheel Win"
+          })
+        });
+      }
+
+      // Update local balance
+      this.balance = this.balance - this.betAmount + winAmount;
+
+      this.lastResult = isWin
+        ? { message: `🎉 You Won ₦${winAmount}!`, color: "text-green-400" }
+        : { message: "😢 You Lost! Try Again.", color: "text-red-500" };
+
+      // Save recent bet
+      this.recent.unshift({
+        details: `Wheel Spin ${isWin ? "(Win)" : "(Lose)"}`,
+        status: isWin ? "Win" : "Lose",
+        amount: `NGN${isWin ? winAmount : this.betAmount}`,
+        trx_type: isWin ? "+" : "-"
+      });
+
+      this.betAmount = 0;
+    }
+  }
+}).mount("#app");
+</script>
+
+</body>
+</html>
