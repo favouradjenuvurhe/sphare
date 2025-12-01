@@ -144,7 +144,7 @@ createApp({
   methods: {
     async fetchUser() {
       try {
-        const res = await fetch("https://your-domain.com/api/user/details", {
+        const res = await fetch("https://favour-amaaavl.xyz/api/user/details", {
           headers: { "Authorization": "Bearer " + this.token }
         });
         const data = await res.json();
@@ -171,7 +171,7 @@ createApp({
       this.wheelRotation += spinDeg;
 
       // Debit bet from wallet
-      await fetch("https://your-domain.com/api/wallet/debit", {
+      await fetch("https://favour-amaaavl.xyz/api/wallet/debit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -184,7 +184,7 @@ createApp({
 
       // Credit win if any
       if (winAmount > 0) {
-        await fetch("https://your-domain.com/api/wallet/credit", {
+        await fetch("https://favour-amaaavl.xyz/api/wallet/credit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
