@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Register</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: '#0C0A16',
+            casinoCard: '#151226',
+            casinoPurple: '#A56BFF',
+            casinoGlow: '#CFAAFF'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui'] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+</head>
+
+<body class="bg-casinoDark text-white font-sans flex items-center justify-center min-h-screen px-6">
+
+<div id="app" class="w-full max-w-md">
+
+  <!-- Header -->
+  <div class="text-center mb-10">
+      <h1 class="text-3xl font-extrabold text-casinoPurple">Create Account</h1>
+      <p class="text-gray-400 mt-1">Register to get started</p>
+  </div>
+
+  <!-- REGISTER CARD -->
+  <div class="bg-casinoCard p-8 rounded-2xl shadow-2xl">
+
+    <!-- Firstname -->
+    <label class="text-sm text-gray-300">First Name</label>
+    <input v-model="firstname"
+      class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Enter first name">
+
+    <!-- Lastname -->
+    <label class="text-sm text-gray-300">Last Name</label>
+    <input v-model="lastname"
+      class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Enter last name">
+
+    <!-- Username -->
+    <label class="text-sm text-gray-300">Username</label>
+    <input v-model="username"
+      class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Choose a username">
+
+    <!-- Email -->
+    <label class="text-sm text-gray-300">Email</label>
+    <input v-model="email" type="email"
+      class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Enter your email">
+
+    <!-- Mobile -->
+    <label class="text-sm text-gray-300">Phone Number</label>
+    <input v-model="mobile"
+      class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Enter phone number">
+
+    <!-- Referral -->
+    <label class="text-sm text-gray-300">Referral (optional)</label>
+    <input v-model="referral"
+      class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Referral username">
+
+    <!-- Password -->
+    <label class="text-sm text-gray-300">Password</label>
+    <input v-model="password" type="password"
+      class="w-full mt-1 mb-6 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Create password">
+
+    <!-- Register Button -->
+    <button @click="submitRegister"
+      class="w-full py-3 rounded-xl bg-casinoPurple font-semibold text-white flex justify-center items-center gap-2">
+      <i data-lucide="user-plus"></i> Create Account
+    </button>
+
+    <!-- Error -->
+    <div v-if="error" class="mt-4 text-center text-red-400 text-sm">
+      {{ error }}
+    </div>
+
+  </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      firstname: "",
+      lastname: "",
+      username: "",
+      email: "",
+      mobile: "",
+      password: "",
+      referral: "",
+      error: "",
+      site_domain: "coinsphare.online" // auto-hidden
+    }
+  },
+  mounted() {
+    lucide.createIcons();
+  },
+  methods: {
+    async submitRegister() {
+      this.error = "";
+
+      if (!this.firstname || !this.lastname || !this.username || !this.email || !this.mobile || !this.password) {
+        this.error = "All fields except referral are required";
+        return;
+      }
+
+      const payload = {
+        firstname: this.firstname,
+        lastname: this.lastname,
+        username: this.username,
+        email: this.email,
+        mobile: this.mobile,
+        password: this.password,
+        referral: this.referral,
+        site_domain: this.site_domain
+      };
+
+      try {
+        const res = await fetch("https://https://favour-amaaavl.xyz/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!data.status) {
+          this.error = data.message || "Registration failed";
+          return;
+        }
+
+        // SAVE TOKEN + USER
+        localStorage.setItem("casino_token", data.token);
+        localStorage.setItem("casino_user", JSON.stringify(data.user));
+
+        // REDIRECT TO HOME
+        window.location.href = "https://coinsphare.online";
+
+      } catch (e) {
+        this.error = "Network error, try again.";
+      }
+    }
+  }
+}).mount("#app");
+</script>
+
+</body>
+</html>
