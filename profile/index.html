@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Profile</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: '#0C0A16',
+            casinoCard: '#151226',
+            casinoPurple: '#A56BFF',
+            casinoGlow: '#CFAAFF'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui'] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+</head>
+
+<body class="bg-casinoDark font-sans text-white antialiased">
+
+  <div id="app" class="min-h-screen pb-24">
+
+    <!-- HEADER -->
+    <div class="px-5 py-6 flex items-center justify-between">
+      <div class="text-lg font-semibold">
+        Profile
+      </div>
+      <span class="p-2 rounded-full bg-casinoCard shadow">
+        <i data-lucide="settings" class="text-gray-300"></i>
+      </span>
+    </div>
+
+    <!-- USER CARD -->
+    <div class="px-5">
+      <div class="rounded-2xl bg-casinoCard p-5 flex items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-casinoPurple/30 flex items-center justify-center">
+          <i data-lucide="user" class="text-casinoPurple" style="width:32px;height:32px"></i>
+        </div>
+
+        <div>
+          <div class="text-xl font-bold">{{ user.firstname }}</div>
+          <div class="text-gray-400 text-sm">{{ user.email }}</div>
+        </div>
+      </div>
+
+      <!-- BALANCE CARD -->
+      <div class="rounded-2xl mt-5 p-5 bg-gradient-to-r from-casinoPurple to-casinoGlow text-white shadow-xl">
+        <div class="text-sm opacity-80">Wallet Balance</div>
+        <div class="text-3xl font-extrabold">{{ balance }}</div>
+      </div>
+    </div>
+
+    <!-- SETTINGS LIST -->
+    <div class="px-5 mt-8 space-y-3">
+
+      <div 
+        class="flex items-center justify-between p-4 rounded-xl bg-casinoCard"
+        @click="go('/edit-profile')"
+      >
+        <div class="flex items-center gap-3">
+          <i data-lucide="pencil" class="text-casinoPurple"></i>
+          <span>Edit Profile</span>
+        </div>
+        <i data-lucide="chevron-right"></i>
+      </div>
+
+      <div 
+        class="flex items-center justify-between p-4 rounded-xl bg-casinoCard"
+        @click="go('/change-password')"
+      >
+        <div class="flex items-center gap-3">
+          <i data-lucide="lock" class="text-casinoPurple"></i>
+          <span>Change Password</span>
+        </div>
+        <i data-lucide="chevron-right"></i>
+      </div>
+
+      <div 
+        class="flex items-center justify-between p-4 rounded-xl bg-casinoCard"
+        @click="go('/notifications')"
+      >
+        <div class="flex items-center gap-3">
+          <i data-lucide="bell" class="text-casinoPurple"></i>
+          <span>Notifications</span>
+        </div>
+        <i data-lucide="chevron-right"></i>
+      </div>
+
+      <div 
+        class="flex items-center justify-between p-4 rounded-xl bg-casinoCard"
+        @click="go('/security')"
+      >
+        <div class="flex items-center gap-3">
+          <i data-lucide="shield" class="text-casinoPurple"></i>
+          <span>Security</span>
+        </div>
+        <i data-lucide="chevron-right"></i>
+      </div>
+
+      <div 
+        class="flex items-center justify-between p-4 rounded-xl bg-red-600/20 text-red-400 font-semibold"
+        @click="logout"
+      >
+        <div class="flex items-center gap-3">
+          <i data-lucide="log-out"></i>
+          <span>Logout</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAVIGATION -->
+  <div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+    <a href="/dashboard" class="flex flex-col items-center">
+      <i data-lucide="home" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Home</span>
+    </a>
+    <a href="/games" class="flex flex-col items-center">
+      <i data-lucide="gamepad-2" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Games</span>
+    </a>
+    <a href="/bets" class="flex flex-col items-center">
+      <i data-lucide="bar-chart" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Bets</span>
+    </a>
+    <a href="/profile" class="flex flex-col items-center">
+      <i data-lucide="user" class="text-casinoPurple"></i>
+      <span class="text-xs text-casinoPurple mt-1">Profile</span>
+    </a>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          token: "",
+          user: {},
+          balance: "₦0.00"
+        }
+      },
+
+      mounted() {
+        lucide.createIcons();
+        this.token = localStorage.getItem("casino_token");
+        if (!this.token) return;
+        this.fetchUser();
+      },
+
+      methods: {
+        async fetchUser() {
+          try {
+            const res = await fetch("https://favour-amaaavl.xyz/api/user/details", {
+              headers: { "Authorization": "Bearer " + this.token }
+            });
+
+            const data = await res.json();
+            if (data.status === true) {
+              this.user = data.user;
+              this.balance = "₦" + Number(this.user.balance).toLocaleString();
+            }
+          } catch (e) {}
+        },
+
+        go(link) {
+          window.location.href = link;
+        },
+
+        logout() {
+          localStorage.removeItem("casino_token");
+          window.location.href = "/login";
+        }
+      }
+    }).mount('#app');
+  </script>
+
+</body>
+</html>
