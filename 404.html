@@ -1,1 +1,83 @@
+<?php
+/**
+ * 404 Page - Casino UI
+ * Author: Amaaavl
+ */
+if (!defined('ABSPATH')) exit;
+?>
 
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>404 - Page Not Found</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: "#0C0A16",
+            casinoCard: "#151226",
+            casinoPurple: "#A56BFF",
+            casinoGlow: "#CFAAFF"
+          },
+          fontFamily: { sans: ["Inter", "system-ui"] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+</head>
+
+<body class="bg-casinoDark font-sans text-white antialiased">
+
+  <div class="min-h-screen flex flex-col items-center justify-center text-center px-6">
+
+    <!-- Icon -->
+    <div class="w-20 h-20 flex items-center justify-center rounded-2xl bg-casinoPurple/20 mb-6">
+      <i data-lucide="alert-triangle" class="text-casinoPurple" style="width:42px;height:42px;"></i>
+    </div>
+
+    <div class="text-7xl font-extrabold text-casinoPurple">404</div>
+    <p class="mt-4 text-gray-300 text-lg">Oops! The page you're looking for doesn't exist.</p>
+
+    <a href="/" class="mt-6 inline-block px-8 py-3 bg-casinoPurple rounded-full font-semibold shadow-lg hover:opacity-90 transition">
+      Go Back Home
+    </a>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+    <a href="/dashboard" class="flex flex-col items-center">
+      <i data-lucide="home" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Home</span>
+    </a>
+    <a href="/games" class="flex flex-col items-center">
+      <i data-lucide="gamepad-2" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Games</span>
+    </a>
+    <a href="/bets" class="flex flex-col items-center">
+      <i data-lucide="bar-chart" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Bets</span>
+    </a>
+    <a href="/profile" class="flex flex-col items-center">
+      <i data-lucide="user" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Profile</span>
+    </a>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+
+</body>
+</html>
