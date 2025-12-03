@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bets</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: "#0C0A16",
+            casinoCard: "#151226",
+            casinoPurple: "#A56BFF",
+            casinoGlow: "#CFAAFF"
+          },
+          fontFamily: { sans: ["Inter", "system-ui"] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+</head>
+
+<body class="bg-casinoDark font-sans text-white antialiased">
+  
+  <div id="app" class="min-h-screen pb-24">
+
+    <!-- Header -->
+    <div class="px-5 py-6 flex items-center justify-between">
+      <div class="text-lg font-semibold">🎲 Recent Bets</div>
+      <span class="p-2 rounded-full bg-casinoCard shadow">
+        <i data-lucide="clock" class="text-gray-300"></i>
+      </span>
+    </div>
+
+    <!-- If not logged in -->
+    <div v-if="!token" class="px-5">
+      <div class="rounded-2xl bg-casinoCard p-5 text-center">
+        <div class="text-gray-300">You must login to view your bets.</div>
+        <a href="/login" class="mt-4 inline-block px-6 py-2 bg-casinoPurple rounded-full font-semibold">
+          Login Account
+        </a>
+      </div>
+    </div>
+
+    <!-- Bets List -->
+    <div v-else class="px-5 mt-4 space-y-4">
+
+      <div 
+        v-for="trx in bets"
+        class="bg-casinoCard p-4 rounded-xl shadow-lg flex items-center"
+      >
+
+        <!-- Icon -->
+        <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-casinoPurple/20">
+          <i data-lucide="dice-6" class="text-casinoPurple"></i>
+        </div>
+
+        <!-- Info -->
+        <div class="ml-4 flex-1">
+          <div class="font-semibold text-sm">{{ trx.details }}</div>
+          <div class="text-xs text-gray-400">{{ trx.date }} • {{ trx.status }}</div>
+        </div>
+
+        <!-- Amount -->
+        <div 
+          class="font-semibold"
+          :class="{
+            'text-green-400': trx.trx_type === '+',
+            'text-red-400': trx.trx_type === '-',
+            'text-yellow-400': trx.trx_type === '~'
+          }"
+        >
+          {{ trx.trx_type }}{{ formatMoney(trx.amount) }}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+    <a href="/dashboard" class="flex flex-col items-center">
+      <i data-lucide="home" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Home</span>
+    </a>
+    <a href="/games" class="flex flex-col items-center">
+      <i data-lucide="gamepad-2" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Games</span>
+    </a>
+    <a href="/bets" class="flex flex-col items-center">
+      <i data-lucide="bar-chart" class="text-casinoPurple"></i>
+      <span class="text-xs text-casinoPurple mt-1">Bets</span>
+    </a>
+    <a href="/profile" class="flex flex-col items-center">
+      <i data-lucide="user" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Profile</span>
+    </a>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          token: null,
+          bets: []
+        }
+      },
+
+      mounted() {
+        lucide.createIcons();
+        this.token = localStorage.getItem("casino_token");
+
+        if (this.token) {
+          this.loadBets();
+        }
+      },
+
+      methods: {
+        async loadBets() {
+          try {
+            const res = await fetch("https://favour-amaaavl.xyz/api/user/details", {
+              headers: { "Authorization": "Bearer " + this.token }
+            });
+
+            const data = await res.json();
+
+            if (data.status === true) {
+              this.bets = data.transactions;
+            }
+          } catch (e) {
+            console.error("Failed to load bets");
+          }
+        },
+
+        formatMoney(n) {
+          return "₦" + Number(n).toLocaleString();
+        }
+      }
+    }).mount("#app");
+  </script>
+
+</body>
+</html>
