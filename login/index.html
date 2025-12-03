@@ -59,9 +59,18 @@
 
     <!-- Login Button -->
     <button @click="submitLogin"
-      class="w-full py-3 rounded-xl bg-casinoPurple font-semibold text-white flex justify-center items-center gap-2">
-      <i data-lucide="log-in"></i> Login
+      class="w-full py-3 rounded-xl bg-casinoPurple font-semibold text-white flex justify-center items-center gap-2"
+      :disabled="loading">
+      <i data-lucide="log-in"></i>
+      <span v-if="!loading">Login</span>
+      <span v-else>Logging...</span>
     </button>
+
+    <!-- Forgot & Register Links -->
+    <div class="mt-4 text-center text-gray-400 text-sm flex justify-between">
+      <a href="forgot-password.html" class="hover:text-casinoPurple">Forgot Password?</a>
+      <a href="register.html" class="hover:text-casinoPurple">Register</a>
+    </div>
 
     <!-- Error -->
     <div v-if="error" class="mt-4 text-center text-red-400 text-sm">
@@ -81,7 +90,8 @@ createApp({
       login: "",
       password: "",
       error: "",
-      site_domain: "coinsphare.online"   // hidden & auto-sent
+      loading: false,
+      site_domain: "coinsphare.online"
     }
   },
   mounted() {
@@ -90,12 +100,12 @@ createApp({
   methods: {
     async submitLogin() {
       this.error = "";
-
       if (!this.login || !this.password) {
         this.error = "All fields are required";
         return;
       }
 
+      this.loading = true; // show logging...
       const payload = {
         login: this.login,
         password: this.password,
@@ -113,6 +123,7 @@ createApp({
 
         if (!data.status) {
           this.error = data.message || "Invalid login details";
+          this.loading = false;
           return;
         }
 
@@ -125,6 +136,7 @@ createApp({
 
       } catch (e) {
         this.error = "Network error, try again.";
+        this.loading = false;
       }
     }
   }
