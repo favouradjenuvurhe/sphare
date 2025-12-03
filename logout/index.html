@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Logging Out</title>
+  <script>
+    // Clear localStorage tokens
+    localStorage.removeItem('casino_token');
+    localStorage.removeItem('casino_user');
+
+    // Redirect to login page
+    window.location.href = 'login.html'; // change to your login page URL if different
+  </script>
+</head>
+<body>
+
+</body>
+</html>
