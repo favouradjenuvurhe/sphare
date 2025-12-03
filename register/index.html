@@ -8,7 +8,7 @@
   <!-- Inter font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CDN -->
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -28,6 +28,7 @@
 
   <!-- Vue -->
   <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+
   <!-- Lucide -->
   <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
 </head>
@@ -61,37 +62,46 @@
     <label class="text-sm text-gray-300">Username</label>
     <input v-model="username"
       class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
-      placeholder="Choose a username">
+      placeholder="Enter username">
 
     <!-- Email -->
     <label class="text-sm text-gray-300">Email</label>
-    <input v-model="email" type="email"
+    <input v-model="email"
       class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
-      placeholder="Enter your email">
+      placeholder="Enter email">
 
     <!-- Mobile -->
-    <label class="text-sm text-gray-300">Phone Number</label>
+    <label class="text-sm text-gray-300">Mobile Number</label>
     <input v-model="mobile"
       class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
       placeholder="Enter phone number">
-
-    <!-- Referral -->
-    <label class="text-sm text-gray-300">Referral (optional)</label>
-    <input v-model="referral"
-      class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
-      placeholder="Referral username">
 
     <!-- Password -->
     <label class="text-sm text-gray-300">Password</label>
     <input v-model="password" type="password"
       class="w-full mt-1 mb-6 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
-      placeholder="Create password">
+      placeholder="Enter password">
+
+    <!-- Referral -->
+    <label class="text-sm text-gray-300">Referral (Optional)</label>
+    <input v-model="referral"
+      class="w-full mt-1 mb-6 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Referral username">
 
     <!-- Register Button -->
     <button @click="submitRegister"
-      class="w-full py-3 rounded-xl bg-casinoPurple font-semibold text-white flex justify-center items-center gap-2">
-      <i data-lucide="user-plus"></i> Create Account
+      class="w-full py-3 rounded-xl bg-casinoPurple font-semibold text-white flex justify-center items-center gap-2"
+      :disabled="loading">
+      <i data-lucide="user-plus"></i>
+      <span v-if="!loading">Register</span>
+      <span v-else>Registering...</span>
     </button>
+
+    <!-- Login Link -->
+    <div class="mt-4 text-center text-gray-400 text-sm">
+      Already have an account?
+      <a href="login.html" class="text-casinoPurple hover:text-white">Login</a>
+    </div>
 
     <!-- Error -->
     <div v-if="error" class="mt-4 text-center text-red-400 text-sm">
@@ -99,6 +109,7 @@
     </div>
 
   </div>
+
 </div>
 
 <script>
@@ -114,8 +125,9 @@ createApp({
       mobile: "",
       password: "",
       referral: "",
-      error: "",
-      site_domain: "coinsphare.online" // auto-hidden
+      site_domain: "coinsphare.online",
+      loading: false,
+      error: ""
     }
   },
   mounted() {
@@ -130,6 +142,8 @@ createApp({
         return;
       }
 
+      this.loading = true;
+
       const payload = {
         firstname: this.firstname,
         lastname: this.lastname,
@@ -142,7 +156,7 @@ createApp({
       };
 
       try {
-        const res = await fetch("https://https://favour-amaaavl.xyz/api/register", {
+        const res = await fetch("https://favour-amaaavl.xyz/api/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -152,6 +166,7 @@ createApp({
 
         if (!data.status) {
           this.error = data.message || "Registration failed";
+          this.loading = false;
           return;
         }
 
@@ -159,11 +174,12 @@ createApp({
         localStorage.setItem("casino_token", data.token);
         localStorage.setItem("casino_user", JSON.stringify(data.user));
 
-        // REDIRECT TO HOME
+        // REDIRECT TO DASHBOARD
         window.location.href = "https://coinsphare.online";
 
       } catch (e) {
         this.error = "Network error, try again.";
+        this.loading = false;
       }
     }
   }
