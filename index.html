@@ -165,7 +165,6 @@
       mounted() {
         lucide.createIcons();
 
-        // 🔥 UPDATED — MATCH YOUR LOGIN PAGE EXACTLY
         this.token = localStorage.getItem("casino_token");
 
         if (!this.token) return;
@@ -210,11 +209,12 @@
             return;
           }
 
-          alert("Deposit clicked");
+          // 🔥 UPDATED — redirect to deposit page
+          window.location.href = "/deposit";
         }
       }
     }).mount('#app');
   </script>
 
 </body>
-              </html>
+</html>
