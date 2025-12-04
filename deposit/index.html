@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deposit</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: '#0C0A16',
+            casinoCard: '#151226',
+            casinoPurple: '#A56BFF',
+            casinoGlow: '#CFAAFF'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui'] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+
+  <!-- Paystack -->
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+</head>
+
+<body class="bg-casinoDark text-white font-sans antialiased">
+  <div id="app" class="min-h-screen p-6 pb-24">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <div class="text-lg font-semibold">
+          Deposit Funds
+        </div>
+        <div class="text-sm text-gray-400">
+          Top-up your wallet securely
+        </div>
+      </div>
+
+      <span class="p-2 rounded-full bg-casinoCard shadow">
+        <i data-lucide="wallet" class="text-gray-300"></i>
+      </span>
+    </div>
+
+    <!-- Amount Input -->
+    <div class="bg-casinoCard p-5 rounded-2xl shadow-lg">
+      <label class="text-gray-300 text-sm">Enter Amount (₦)</label>
+      <input type="number" v-model="amount"
+        class="mt-2 w-full p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
+        placeholder="e.g. 2000" />
+
+      <button @click="startPayment"
+        class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
+        <i data-lucide="arrow-big-up"></i> Fund Wallet
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+    <a href="/dashboard" class="flex flex-col items-center">
+      <i data-lucide="home" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Home</span>
+    </a>
+    <a href="/games" class="flex flex-col items-center">
+      <i data-lucide="gamepad-2" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Games</span>
+    </a>
+    <a href="/deposit" class="flex flex-col items-center">
+      <i data-lucide="arrow-big-up" class="text-casinoPurple"></i>
+      <span class="text-xs text-casinoPurple mt-1">Deposit</span>
+    </a>
+    <a href="/profile" class="flex flex-col items-center">
+      <i data-lucide="user" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Profile</span>
+    </a>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          token: "",
+          amount: ""
+        }
+      },
+
+      mounted() {
+        lucide.createIcons();
+
+        this.token = localStorage.getItem("casino_token");
+        if (!this.token) {
+          alert("Login required");
+          window.location.href = "/login";
+        }
+      },
+
+      methods: {
+
+        // --- PAYSTACK PAYMENT START ---
+        startPayment() {
+          if (!this.amount || this.amount < 100) {
+            alert("Enter a valid amount (min ₦100)");
+            return;
+          }
+
+          let handler = PaystackPop.setup({
+            key: "pk_live_xxxxxxxxxxxxx", // 🔥 Your Paystack PUBLIC Key
+            email: "user@example.com",  // optional, Paystack requires email
+            amount: this.amount * 100, // convert to kobo
+            ref: "CASINO-" + Date.now(),
+
+            callback: (response) => {
+              // Paystack success → call wallet credit API
+              this.creditWallet(response.reference);
+            },
+
+            onClose: () => {
+              alert("Payment cancelled.");
+            }
+          });
+
+          handler.openIframe();
+        },
+
+        // --- CREDIT WALLET AFTER SUCCESS ---
+        async creditWallet(reference) {
+
+          const payload = {
+            token: this.token,
+            amount: Number(this.amount),
+            reference: reference,
+            description: "Wallet Funding via Paystack"
+          };
+
+          const res = await fetch("https://your-domain.com/api/wallet/credit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+
+          if (data.status === true) {
+            alert("Wallet funded successfully!");
+            window.location.href = "/dashboard";
+          } else {
+            alert("Funding failed: " + data.message);
+          }
+        }
+
+      }
+    }).mount("#app");
+  </script>
+
+</body>
+  </html>
