@@ -2,8 +2,8 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Deposit</title>
 
   <!-- Inter Font -->
@@ -21,10 +21,12 @@
             casinoPurple: "#A56BFF",
             casinoGlow: "#CFAAFF"
           },
-          fontFamily: { sans: ["Inter", "system-ui"] }
+          fontFamily: {
+            sans: ["Inter", "system-ui"]
+          }
         }
       }
-    }
+    };
   </script>
 
   <!-- Paystack -->
@@ -35,22 +37,16 @@
 
   <!-- Lucide -->
   <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
-
 </head>
 
 <body class="bg-casinoDark text-white font-sans antialiased">
-
   <div id="app" class="min-h-screen p-6 pb-24">
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <div class="text-lg font-semibold">
-          Deposit Funds
-        </div>
-        <div class="text-sm text-gray-400">
-          Top-up your wallet securely
-        </div>
+        <div class="text-lg font-semibold">Deposit Funds</div>
+        <div class="text-sm text-gray-400">Top-up your wallet securely</div>
       </div>
 
       <span class="p-2 rounded-full bg-casinoCard shadow">
@@ -61,23 +57,20 @@
     <!-- Amount Input -->
     <div class="bg-casinoCard p-5 rounded-2xl shadow-lg">
       <label class="text-gray-300 text-sm">Enter Amount (₦)</label>
-      <input
-        type="number"
-        v-model="amount"
+      <input type="number" v-model="amount"
         class="mt-2 w-full p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
-        placeholder="e.g. 2000"
-      />
+        placeholder="e.g. 2000" />
 
-      <button
-        @click="startPayment"
+      <button @click="startPayment"
         class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
         <i data-lucide="arrow-big-up"></i> Fund Wallet
       </button>
     </div>
 
-    <!-- Debug Status -->
+    <!-- Debug Response -->
     <div v-if="status" class="mt-4 text-sm text-gray-300">
-      {{ status }}
+      <strong>Response:</strong><br>
+      <pre class="whitespace-pre-wrap">{{ status }}</pre>
     </div>
 
   </div>
@@ -110,16 +103,14 @@
         return {
           token: "",
           amount: "",
-          status: "" // debug log
+          status: "" // Debug output
         };
       },
 
       mounted() {
-        // Load icons after mount
         setTimeout(() => lucide.createIcons(), 100);
 
         this.token = localStorage.getItem("casino_token");
-
         if (!this.token) {
           alert("Login required");
           window.location.href = "/login";
@@ -127,7 +118,6 @@
       },
 
       methods: {
-
         startPayment() {
           if (!this.amount || this.amount < 100) {
             alert("Enter a valid amount (min ₦100)");
@@ -143,12 +133,12 @@
             ref: "CNS-" + Date.now(),
 
             callback: (response) => {
-              this.status = "Payment successful. Crediting wallet…";
+              this.status = "Payment complete. Crediting wallet…";
               this.creditWallet(response.reference);
             },
 
             onClose: () => {
-              this.status = "Payment cancelled by user.";
+              this.status = "Payment cancelled.";
             }
           });
 
@@ -163,29 +153,37 @@
             description: "Wallet Funding via Paystack"
           };
 
-          this.status = "Sending credit request…";
+          this.status = "Sending request…";
 
           try {
-            const res = await fetch("https://favour-amaaavl.xyz/api/wallet/credit", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
+            const res = await fetch(
+              "https://favour-amaaavl.xyz/api/wallet/credit",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              }
+            );
 
-            const data = await res.json();
+            const text = await res.text(); // GET RAW RESPONSE ALWAYS
+            this.status = text;            // Show raw API output
 
-            if (data.status === true) {
-              this.status = "Wallet funded successfully!";
+            let data = null;
+            try {
+              data = JSON.parse(text); // Try JSON parse
+            } catch (e) {
+              console.warn("Non-JSON response:", text);
+            }
+
+            if (data && data.status === true) {
               alert("Wallet funded!");
               window.location.href = "/dashboard";
             } else {
-              alert("Funding failed: " + data.message);
-              this.status = "API failed: " + JSON.stringify(data);
+              alert("Funding failed: " + (data?.message ?? text));
             }
           } catch (err) {
-            this.status = "Network error!";
-            alert("Network error! Check console.");
-            console.error(err);
+            this.status = "REQUEST FAILED: " + err.message;
+            alert("Request failed: " + err.message);
           }
         }
       }
