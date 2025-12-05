@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Deposit</title>
 
-  <!-- Inter font -->
+  <!-- Inter Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Tailwind -->
@@ -16,28 +16,30 @@
       theme: {
         extend: {
           colors: {
-            casinoDark: '#0C0A16',
-            casinoCard: '#151226',
-            casinoPurple: '#A56BFF',
-            casinoGlow: '#CFAAFF'
+            casinoDark: "#0C0A16",
+            casinoCard: "#151226",
+            casinoPurple: "#A56BFF",
+            casinoGlow: "#CFAAFF"
           },
-          fontFamily: { sans: ['Inter', 'system-ui'] }
+          fontFamily: { sans: ["Inter", "system-ui"] }
         }
       }
     }
   </script>
 
-  <!-- Lucide -->
-  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
-
-  <!-- Vue -->
-  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
-
   <!-- Paystack -->
   <script src="https://js.paystack.co/v1/inline.js"></script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+
+  <!-- Lucide -->
+  <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+
 </head>
 
 <body class="bg-casinoDark text-white font-sans antialiased">
+
   <div id="app" class="min-h-screen p-6 pb-24">
 
     <!-- Header -->
@@ -59,19 +61,28 @@
     <!-- Amount Input -->
     <div class="bg-casinoCard p-5 rounded-2xl shadow-lg">
       <label class="text-gray-300 text-sm">Enter Amount (₦)</label>
-      <input type="number" v-model="amount"
+      <input
+        type="number"
+        v-model="amount"
         class="mt-2 w-full p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
-        placeholder="e.g. 2000" />
+        placeholder="e.g. 2000"
+      />
 
-      <button @click="startPayment"
+      <button
+        @click="startPayment"
         class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
         <i data-lucide="arrow-big-up"></i> Fund Wallet
       </button>
     </div>
 
+    <!-- Debug Status -->
+    <div v-if="status" class="mt-4 text-sm text-gray-300">
+      {{ status }}
+    </div>
+
   </div>
 
-  <!-- Bottom Nav -->
+  <!-- Bottom Navigation -->
   <div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
     <a href="/dashboard" class="flex flex-col items-center">
       <i data-lucide="home" class="text-gray-400"></i>
@@ -98,14 +109,17 @@
       data() {
         return {
           token: "",
-          amount: ""
-        }
+          amount: "",
+          status: "" // debug log
+        };
       },
 
       mounted() {
-        lucide.createIcons();
+        // Load icons after mount
+        setTimeout(() => lucide.createIcons(), 100);
 
         this.token = localStorage.getItem("casino_token");
+
         if (!this.token) {
           alert("Login required");
           window.location.href = "/login";
@@ -114,35 +128,34 @@
 
       methods: {
 
-        // --- PAYSTACK PAYMENT START ---
         startPayment() {
           if (!this.amount || this.amount < 100) {
             alert("Enter a valid amount (min ₦100)");
             return;
           }
 
+          this.status = "Opening Paystack…";
+
           let handler = PaystackPop.setup({
-            key: "pk_test_f5d27a251b6470dd39ec1722631f7ed82baa8ade", // 🔥 Your Paystack PUBLIC Key
-            email: "user@example.com",  // optional, Paystack requires email
-            amount: this.amount * 100, // convert to kobo
-            ref: "NPKO-" + Date.now(),
+            key: "pk_test_f5d27a251b6470dd39ec1722631f7ed82baa8ade",
+            email: "user@coinsphare.online",
+            amount: this.amount * 100,
+            ref: "CNS-" + Date.now(),
 
             callback: (response) => {
-              // Paystack success → call wallet credit API
+              this.status = "Payment successful. Crediting wallet…";
               this.creditWallet(response.reference);
             },
 
             onClose: () => {
-              alert("Payment cancelled.");
+              this.status = "Payment cancelled by user.";
             }
           });
 
           handler.openIframe();
         },
 
-        // --- CREDIT WALLET AFTER SUCCESS ---
         async creditWallet(reference) {
-
           const payload = {
             token: this.token,
             amount: Number(this.amount),
@@ -150,25 +163,34 @@
             description: "Wallet Funding via Paystack"
           };
 
-          const res = await fetch("https://your-domain.com/api/wallet/credit", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
+          this.status = "Sending credit request…";
 
-          const data = await res.json();
+          try {
+            const res = await fetch("https://coinsphare.online/api/wallet/credit", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
 
-          if (data.status === true) {
-            alert("Wallet funded successfully!");
-            window.location.href = "/dashboard";
-          } else {
-            alert("Funding failed: " + data.message);
+            const data = await res.json();
+
+            if (data.status === true) {
+              this.status = "Wallet funded successfully!";
+              alert("Wallet funded!");
+              window.location.href = "/dashboard";
+            } else {
+              alert("Funding failed: " + data.message);
+              this.status = "API failed: " + JSON.stringify(data);
+            }
+          } catch (err) {
+            this.status = "Network error!";
+            alert("Network error! Check console.");
+            console.error(err);
           }
         }
-
       }
     }).mount("#app");
   </script>
 
 </body>
-  </html>
+</html>
