@@ -96,98 +96,96 @@
   </div>
 
   <script>
-    const { createApp } = Vue;
+const { createApp } = Vue;
 
-    createApp({
-      data() {
-        return {
-          token: "",
-          amount: "",
-          status: "" // Debug output
-        };
-      },
+createApp({
+  data() {
+    return {
+      token: "",
+      amount: "",
+      status: ""
+    };
+  },
 
-      mounted() {
-        setTimeout(() => lucide.createIcons(), 100);
+  mounted() {
+    setTimeout(() => lucide.createIcons(), 100);
 
-        this.token = localStorage.getItem("casino_token");
-        if (!this.token) {
-          alert("Login required");
-          window.location.href = "/login";
-        }
-      },
+    this.token = localStorage.getItem("casino_token");
+    if (!this.token) {
+      alert("Login required");
+      window.location.href = "/login";
+    }
+  },
 
-      methods: {
-        startPayment() {
-          if (!this.amount || this.amount < 100) {
-            alert("Enter a valid amount (min ₦100)");
-            return;
-          }
+  methods: {
+    startPayment() {
+      if (!this.amount || this.amount < 100) {
+        alert("Enter a valid amount (min ₦100)");
+        return;
+      }
 
-          this.status = "Opening Paystack…";
+      this.status = "Opening Paystack…";
 
-          let handler = PaystackPop.setup({
-            key: "pk_test_f5d27a251b6470dd39ec1722631f7ed82baa8ade",
-            email: "user@coinsphare.online",
-            amount: this.amount * 100,
-            ref: "CNS-" + Date.now(),
+      let handler = PaystackPop.setup({
+        key: "pk_test_f5d27a251b6470dd39ec1722631f7ed82baa8ade",
+        email: "user@coinsphare.online",
+        amount: this.amount * 100,
+        ref: "CNS-" + Date.now(),
 
-            callback: (response) => {
-              this.status = "Payment complete. Crediting wallet…";
-              this.creditWallet(response.reference);
-            },
-
-            onClose: () => {
-              this.status = "Payment cancelled.";
-            }
-          });
-
-          handler.openIframe();
+        callback: async (response) => {
+          this.status = "Payment complete. Crediting wallet…";
+          await this.creditWallet(response.reference);
         },
 
-        async creditWallet(reference) {
-          const payload = {
-            token: this.token,
-            amount: Number(this.amount),
-            reference: reference,
-            description: "Wallet Funding via Paystack"
-          };
-
-          this.status = "Sending request…";
-
-          try {
-            const res = await fetch(
-              "https://favour-amaaavl.xyz/api/wallet/credit",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-              }
-            );
-
-            const text = await res.text(); // GET RAW RESPONSE ALWAYS
-            this.status = text;            // Show raw API output
-
-            let data = null;
-            try {
-              data = JSON.parse(text); // Try JSON parse
-            } catch (e) {
-              console.warn("Non-JSON response:", text);
-            }
-
-            if (data && data.status === true) {
-              alert("Wallet funded!");
-              window.location.href = "/dashboard";
-            } else {
-              alert("Funding failed: " + (data?.message ?? text));
-            }
-          } catch (err) {
-            this.status = "REQUEST FAILED: " + err.message;
-            alert("Request failed: " + err.message);
-          }
+        onClose: () => {
+          this.status = "Payment window closed.";
         }
+      });
+
+      handler.openIframe();
+    },
+
+    async creditWallet(reference) {
+      const payload = {
+        amount: Number(this.amount),
+        reference: reference,
+        description: "Wallet Funding via Paystack"
+      };
+
+      this.status = "Sending request…";
+
+      try {
+        const res = await fetch("https://favour-amaaavl.xyz/api/wallet/credit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + this.token
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await res.text();
+        this.status = text;
+
+        let data = null;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {}
+
+        if (data && data.status === true) {
+          alert("Wallet funded!");
+          window.location.href = "/dashboard";
+        } else {
+          alert("Funding failed: " + (data?.message ?? text));
+        }
+
+      } catch (err) {
+        this.status = "REQUEST FAILED: " + err.message;
+        alert("Request failed: " + err.message);
       }
-    }).mount("#app");
+    }
+  }
+}).mount("#app");
   </script>
 
 </body>
