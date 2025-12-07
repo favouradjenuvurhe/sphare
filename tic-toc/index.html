@@ -20,9 +20,7 @@
             errorRed: "#dc3545",
             infoBlue: "#0d6efd"
           },
-          fontFamily: {
-            sans: ["Inter", "system-ui"]
-          }
+          fontFamily: { sans: ["Inter", "system-ui"] }
         }
       }
     };
@@ -45,15 +43,14 @@
     <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
     <input type="number" v-model="betAmount"
       class="mt-2 w-full p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
-      placeholder="e.g. 1000" /><label class="text-gray-300 text-sm mt-4">Select Odds</label>
-<div class="flex gap-3 mt-2">
-  <button v-for="o in odds" :key="o" @click="selectedOdd=o"
-    :class="['flex-1 py-2 rounded-xl font-semibold', selectedOdd===o ? 'bg-casinoPurple text-white' : 'bg-gray-700 text-gray-300']">
-    X{{ o }}
-  </button>
-</div>
-
-<button @click="startGame"
+      placeholder="e.g. 1000" />
+    <label class="text-gray-300 text-sm mt-4">Select Odds</label>
+    <div class="flex gap-3 mt-2">
+      <button v-for="o in odds" :key="o" @click="selectedOdd=o"
+        :class="['flex-1 py-2 rounded-xl font-semibold', selectedOdd===o ? 'bg-casinoPurple text-white' : 'bg-gray-700 text-gray-300']">
+        X{{ o }}
+      </button>
+    </div><button @click="startGame"
   class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
   <i data-lucide="play"></i> Play
 </button>
@@ -98,142 +95,138 @@ createApp({
     return {
       token: "",
       betAmount: "",
-      odds: [2, 3, 4, 5],
+      odds: [2,3,4,5],
       selectedOdd: 2,
       board: Array(9).fill(null),
       gameStarted: false,
       gameOver: false,
       statusMessage: "",
-      notification: { message: "", type: "info" }
+      notification: {message:"", type:"info"},
+      playerWins: false // Track outcome for this round
     };
   },
   mounted() {
-    setTimeout(() => lucide.createIcons(), 100);
+    setTimeout(()=>lucide.createIcons(), 100);
     this.token = localStorage.getItem("casino_token");
-    if (!this.token) {
-      alert("Login required");
-      window.location.href = "/login";
-    }
+    if(!this.token){ alert("Login required"); window.location.href="/login"; }
   },
-  methods: {
-    async startGame() {
-      if (!this.betAmount || this.betAmount < 100) {
+  methods:{
+    async startGame(){
+      if(!this.betAmount || this.betAmount<100)
         return this.showNotification("Enter a valid bet amount (min ₦100)", "error");
-      }
-      this.showNotification("Debiting wallet…", "info");
 
-      try {
+      // Decide outcome now: 30% player win, 70% computer win
+      this.playerWins = Math.random() < 0.3;
+
+      this.showNotification("Debiting wallet…", "info");
+      try{
         const debitRes = await fetch("https://favour-amaaavl.xyz/api/fund/sub", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
           body: JSON.stringify({
-            token: this.token,
-            amount: Number(this.betAmount),
-            reference: "DEBIT" + Date.now(),
-            description: "Tic Tac Toe Bet"
+            token:this.token,
+            amount:Number(this.betAmount),
+            reference:"DEBIT"+Date.now(),
+            description:"Tic Tac Toe Bet"
           })
         });
-
         const debitData = await debitRes.json();
-        if (!debitData.status) {
-          return this.showNotification("Debit failed: " + (debitData.message || "Unknown error"), "error");
-        }
+        if(!debitData.status)
+          return this.showNotification("Debit failed: "+(debitData.message||"Unknown error"),"error");
 
         this.showNotification("Bet accepted! Start playing...", "success");
         this.board = Array(9).fill(null);
         this.gameStarted = true;
         this.gameOver = false;
         this.statusMessage = "";
-      } catch (err) {
-        this.showNotification("Request failed: " + err.message, "error");
+      }catch(err){
+        this.showNotification("Request failed: "+err.message,"error");
       }
     },
-    playerMove(index) {
-      if (this.board[index] || this.gameOver || !this.gameStarted) return;
-      this.board[index] = "X";
-      if (this.checkWinner("X")) {
-        this.endGame(true);
-      } else if (!this.board.includes(null)) {
-        this.endGame(null);
+    playerMove(index){
+      if(this.board[index] || this.gameOver || !this.gameStarted) return;
+      this.board[index]="X";
+
+      if(this.playerWins){
+        // Force player to win
+        if(this.board.filter(c=>c===null).length<=1){
+          this.endGame(true); return;
+        } else setTimeout(this.computerMove,200);
       } else {
-        setTimeout(this.computerMove, 500);
+        // Player will lose
+        setTimeout(this.computerMove,200);
       }
     },
-    computerMove() {
-      if (this.gameOver) return;
-      const emptyCells = this.board.map((v,i)=>v===null?i:null).filter(i=>i!==null);
+    computerMove(){
+      if(this.gameOver) return;
+      const emptyCells=this.board.map((v,i)=>v===null?i:null).filter(i=>i!==null);
 
-      // 70% chance computer wins
-      let moveIndex;
-      if (Math.random() < 0.7 && emptyCells.length>0) {
-        moveIndex = emptyCells[Math.floor(Math.random()*emptyCells.length)];
-      } else {
-        moveIndex = emptyCells[Math.floor(Math.random()*emptyCells.length)];
+      // Fill cell randomly
+      let moveIndex = emptyCells[Math.floor(Math.random()*emptyCells.length)];
+      this.board[moveIndex]="O";
+
+      // Check if computer should win
+      if(!this.playerWins && this.board.filter(c=>c===null).length<=1){
+        this.endGame(false); return;
       }
 
-      this.board[moveIndex] = "O";
-
-      if (this.checkWinner("O")) {
-        this.endGame(false);
-      } else if (!this.board.includes(null)) {
-        this.endGame(null);
+      if(this.playerWins && this.checkWinner("X")){
+        this.endGame(true); return;
       }
+      if(!this.playerWins && this.checkWinner("O")){
+        this.endGame(false); return;
+      }
+
+      if(!this.board.includes(null)) this.endGame(null);
     },
-    checkWinner(player) {
-      const wins = [
-        [0,1,2],[3,4,5],[6,7,8],
-        [0,3,6],[1,4,7],[2,5,8],
-        [0,4,8],[2,4,6]
-      ];
-      return wins.some(indices => indices.every(i => this.board[i]===player));
+    checkWinner(player){
+      const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      return wins.some(indices=>indices.every(i=>this.board[i]===player));
     },
-    async endGame(playerWon) {
-      this.gameOver = true;
-      let message = "";
-      if (playerWon === true) {
-        message = `🎉 You won!`;
-        // Credit winnings
-        const winAmount = Number(this.betAmount) * this.selectedOdd;
-        try {
+    async endGame(playerWon){
+      this.gameOver=true;
+      let message="";
+      if(playerWon===true){
+        message=`🎉 You won!`;
+        const winAmount = Number(this.betAmount)*this.selectedOdd;
+        try{
           const creditRes = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
             body: JSON.stringify({
-              token: this.token,
-              amount: winAmount,
-              reference: "CREDIT" + Date.now(),
-              description: `Tic Tac Toe Win X${this.selectedOdd}`
+              token:this.token,
+              amount:winAmount,
+              reference:"CREDIT"+Date.now(),
+              description:`Tic Tac Toe Win X${this.selectedOdd}`
             })
           });
           const creditData = await creditRes.json();
-          if (creditData.status) {
-            this.showNotification(`🎉 You won ₦${winAmount}!`, "success");
-          } else {
-            this.showNotification("Credit failed: "+(creditData.message||""), "error");
-          }
-        } catch(e){
-          this.showNotification("Credit failed: "+e.message, "error");
+          if(creditData.status){
+            this.showNotification(`🎉 You won ₦${winAmount}!`,"success");
+          } else this.showNotification("Credit failed: "+(creditData.message||""),"error");
+        }catch(e){
+          this.showNotification("Credit failed: "+e.message,"error");
         }
-      } else if (playerWon === false) {
-        message = `💻 Computer won!`;
-        this.showNotification("Oops! The computer wins!", "error");
+      } else if(playerWon===false){
+        message=`💻 Computer won!`;
+        this.showNotification("Oops! The computer wins!","error");
       } else {
-        message = `🤝 Draw!`;
-        this.showNotification("It's a draw!", "info");
+        message=`🤝 Draw!`;
+        this.showNotification("It's a draw!","info");
       }
-      this.statusMessage = message;
+      this.statusMessage=message;
     },
-    showNotification(message,type){
-      this.notification.message = message;
-      this.notification.type = type;
-      setTimeout(()=>{ this.notification.message=""; }, 4000);
+    showNotification(msg,type){
+      this.notification.message=msg;
+      this.notification.type=type;
+      setTimeout(()=>{this.notification.message="";},4000);
     }
   }
 }).mount("#app");
 </script><style>
 .fade-enter-active,
-.fade-leave-active { transition: opacity 0.5s; }
+.fade-leave-active{transition:opacity 0.5s;}
 .fade-enter-from,
-.fade-leave-to { opacity: 0; }
+.fade-leave-to{opacity:0;}
 </style></body>
-  </html>
+        </html>
