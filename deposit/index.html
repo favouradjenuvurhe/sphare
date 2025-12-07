@@ -19,7 +19,10 @@
             casinoDark: "#0C0A16",
             casinoCard: "#151226",
             casinoPurple: "#A56BFF",
-            casinoGlow: "#CFAAFF"
+            casinoGlow: "#CFAAFF",
+            successGreen: "#28a745",
+            errorRed: "#dc3545",
+            infoBlue: "#0d6efd"
           },
           fontFamily: {
             sans: ["Inter", "system-ui"]
@@ -29,7 +32,7 @@
     };
   </script>
 
-  <!-- Paystack New Inline -->
+  <!-- Paystack Inline -->
   <script src="https://js.paystack.co/v2/inline.js"></script>
 
   <!-- Vue -->
@@ -67,11 +70,13 @@
       </button>
     </div>
 
-    <!-- Debug Response -->
-    <div v-if="status" class="mt-4 text-sm text-gray-300">
-      <strong>Response:</strong><br>
-      <pre class="whitespace-pre-wrap">{{ status }}</pre>
-    </div>
+    <!-- Notification -->
+    <transition name="fade">
+      <div v-if="notification.message"
+        :class="['mt-4 p-4 rounded-lg text-white font-medium', notification.type === 'success' ? 'bg-successGreen' : notification.type === 'error' ? 'bg-errorRed' : 'bg-infoBlue']">
+        {{ notification.message }}
+      </div>
+    </transition>
 
   </div>
 
@@ -103,13 +108,15 @@
         return {
           token: "",
           amount: "",
-          status: ""
+          notification: {
+            message: "",
+            type: "info" // success / error / info
+          }
         };
       },
 
       mounted() {
         setTimeout(() => lucide.createIcons(), 100);
-
         this.token = localStorage.getItem("casino_token");
         if (!this.token) {
           alert("Login required");
@@ -121,11 +128,11 @@
         /** START PAYMENT */
         startPayment() {
           if (!this.amount || this.amount < 100) {
-            alert("Enter a valid amount (min ₦100)");
+            this.showNotification("Enter a valid amount (min ₦100)", "error");
             return;
           }
 
-          this.status = "Opening Paystack…";
+          this.showNotification("Opening Paystack…", "info");
 
           const paystack = new PaystackPop();
 
@@ -136,12 +143,12 @@
             reference: "CNS-" + Date.now(),
 
             onSuccess: (response) => {
-              this.status = "Payment successful. Crediting wallet…";
+              this.showNotification("Payment successful. Crediting wallet…", "info");
               this.creditWallet(response.reference);
             },
 
             onCancel: () => {
-              this.status = "Payment cancelled.";
+              this.showNotification("Payment cancelled.", "error");
             }
           });
         },
@@ -154,7 +161,7 @@
             description: "Wallet Funding via Paystack"
           };
 
-          this.status = "Sending credit request…";
+          this.showNotification("Sending credit request…", "info");
 
           try {
             const res = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
@@ -166,27 +173,37 @@
               body: JSON.stringify(payload)
             });
 
-            const text = await res.text();
-            this.status = text;
-
-            let data = null;
-            try { data = JSON.parse(text); } catch (e) {}
+            const data = await res.json();
 
             if (data?.status === true) {
-              alert("Wallet funded successfully!");
-              window.location.href = "https://coinsphare.online/";
+              this.showNotification("💰 Paystack Success! Wallet funded.", "success");
+              setTimeout(() => window.location.href = "https://coinsphare.online/", 2000);
             } else {
-              alert("Funding failed: " + (data?.message ?? text));
+              this.showNotification("Funding failed: " + (data?.message ?? "Unknown error"), "error");
             }
 
           } catch (err) {
-            this.status = "REQUEST FAILED: " + err.message;
-            alert("Request failed: " + err.message);
+            this.showNotification("Request failed: " + err.message, "error");
           }
+        },
+
+        /** SHOW NOTIFICATION */
+        showNotification(message, type) {
+          this.notification.message = message;
+          this.notification.type = type;
+          setTimeout(() => { this.notification.message = ""; }, 4000);
         }
       }
     }).mount("#app");
   </script>
 
+  <style>
+    .fade-enter-active, .fade-leave-active {
+      transition: opacity 0.5s;
+    }
+    .fade-enter-from, .fade-leave-to {
+      opacity: 0;
+    }
+  </style>
 </body>
 </html>
