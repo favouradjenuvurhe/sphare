@@ -150,7 +150,7 @@
           this.showNotification("Debiting wallet…", "info");
 
           try {
-            const debitRes = await fetch("https://favour-amaaavl.xyz/api/wallet/debit", {
+            const debitRes = await fetch("https://favour-amaaavl.xyz/api/fund/sub", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(debitPayload)
@@ -178,7 +178,7 @@
                 description: `Slots Win X${this.selectedOdd}`
               };
 
-              const creditRes = await fetch("https://favour-amaaavl.xyz/api/wallet/credit", {
+              const creditRes = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(creditPayload)
