@@ -1,0 +1,161 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic Tac Toe</title>
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: "#0C0A16",
+            casinoCard: "#151226",
+            casinoPurple: "#A56BFF",
+            casinoGlow: "#CFAAFF",
+            successGreen: "#28a745",
+            errorRed: "#dc3545",
+            infoBlue: "#0d6efd"
+          },
+          fontFamily: {
+            sans: ["Inter", "system-ui"]
+          }
+        }
+      }
+    };
+  </script>
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+  <!-- Lucide -->
+  <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-casinoDark text-white font-sans antialiased">
+<div id="app" class="min-h-screen p-6 pb-24">  <!-- Header -->  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="text-lg font-semibold">Tic Tac Toe</div>
+      <div class="text-sm text-gray-400">Play against the computer!</div>
+    </div>
+    <span class="p-2 rounded-full bg-casinoCard shadow">
+      <i data-lucide="grid" class="text-gray-300"></i>
+    </span>
+  </div>  <!-- Game Board -->  <div class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6 grid grid-cols-3 gap-2 w-72 mx-auto">
+    <button v-for="(cell, index) in board" :key="index" @click="playerMove(index)"
+      :disabled="cell || gameOver"
+      class="h-20 w-20 text-2xl font-bold rounded-lg bg-casinoDark border border-gray-700 flex items-center justify-center hover:bg-casinoPurple transition">
+      {{ cell }}
+    </button>
+  </div>  <!-- Game Status -->  <div class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6 text-center text-lg">
+    <div v-if="gameOver">{{ statusMessage }}</div>
+    <div v-else>🕹️ Your turn</div>
+  </div>  <!-- Notification -->  <transition name="fade">
+    <div v-if="notification.message"
+      :class="['mt-4 p-4 rounded-lg text-white font-medium', notification.type === 'success' ? 'bg-successGreen' : notification.type === 'error' ? 'bg-errorRed' : 'bg-infoBlue']">
+      {{ notification.message }}
+    </div>
+  </transition></div><!-- Bottom Navigation --><div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+  <a href="https://coinsphare.online/" class="flex flex-col items-center">
+    <i data-lucide="home" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Home</span>
+  </a>
+  <a href="/games" class="flex flex-col items-center">
+    <i data-lucide="gamepad-2" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Games</span>
+  </a>
+  <a href="/deposit" class="flex flex-col items-center">
+    <i data-lucide="arrow-big-up" class="text-casinoPurple"></i>
+    <span class="text-xs text-casinoPurple mt-1">Deposit</span>
+  </a>
+  <a href="/profile" class="flex flex-col items-center">
+    <i data-lucide="user" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Profile</span>
+  </a>
+</div><script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      board: Array(9).fill(null),
+      gameOver: false,
+      statusMessage: "",
+      notification: { message: "", type: "info" }
+    };
+  },
+  mounted() {
+    setTimeout(() => lucide.createIcons(), 100);
+  },
+  methods: {
+    playerMove(index) {
+      if (this.board[index] || this.gameOver) return;
+      this.board[index] = "X"; // Human is X
+      if (this.checkWinner("X")) {
+        this.endGame(true);
+      } else {
+        setTimeout(this.computerMove, 500);
+      }
+    },
+    computerMove() {
+      if (this.gameOver) return;
+
+      const emptyCells = this.board.map((v, i) => v === null ? i : null).filter(i => i !== null);
+
+      // 30% chance player wins => 70% chance computer wins
+      let moveIndex;
+      if (Math.random() < 0.7 && emptyCells.length > 0) {
+        // Try to pick a winning move if possible
+        moveIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      } else {
+        // Random move for player win chance
+        moveIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      }
+
+      this.board[moveIndex] = "O"; // Computer is O
+
+      if (this.checkWinner("O")) {
+        this.endGame(false);
+      } else if (!this.board.includes(null)) {
+        this.endGame(null); // Draw
+      }
+    },
+    checkWinner(player) {
+      const wins = [
+        [0,1,2],[3,4,5],[6,7,8], // rows
+        [0,3,6],[1,4,7],[2,5,8], // cols
+        [0,4,8],[2,4,6]          // diagonals
+      ];
+      return wins.some(indices => indices.every(i => this.board[i] === player));
+    },
+    endGame(playerWon) {
+      this.gameOver = true;
+      if (playerWon === true) {
+        this.statusMessage = "🎉 You won!";
+        this.showNotification("Congratulations! You beat the computer!", "success");
+      } else if (playerWon === false) {
+        this.statusMessage = "💻 Computer won!";
+        this.showNotification("Oops! The computer wins!", "error");
+      } else {
+        this.statusMessage = "🤝 Draw!";
+        this.showNotification("It's a draw!", "info");
+      }
+    },
+    showNotification(message, type) {
+      this.notification.message = message;
+      this.notification.type = type;
+      setTimeout(() => { this.notification.message = ""; }, 4000);
+    }
+  }
+}).mount("#app");
+</script><style>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style></body>
+  </html>
