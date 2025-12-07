@@ -1,40 +1,42 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tic Tac Toe Casino</title>
-  <!-- Inter Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            casinoDark: "#0C0A16",
-            casinoCard: "#151226",
-            casinoPurple: "#A56BFF",
-            casinoGlow: "#CFAAFF",
-            successGreen: "#28a745",
-            errorRed: "#dc3545",
-            infoBlue: "#0d6efd"
-          },
-          fontFamily: { sans: ["Inter", "system-ui"] }
-        }
-      }
-    };
-  </script>
-  <!-- Vue -->
-  <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
-  <!-- Lucide -->
-  <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tic Tac Toe Casino</title>
+<!-- Inter Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        casinoDark: "#0C0A16",
+        casinoCard: "#151226",
+        casinoPurple: "#A56BFF",
+        casinoGlow: "#CFAAFF",
+        successGreen: "#28a745",
+        errorRed: "#dc3545",
+        infoBlue: "#0d6efd"
+      },
+      fontFamily: { sans: ["Inter", "system-ui"] }
+    }
+  }
+};
+</script>
+<!-- Vue -->
+<script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+<!-- Lucide -->
+<script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
 </head>
 <body class="bg-casinoDark text-white font-sans antialiased">
-<div id="app" class="min-h-screen p-6 pb-24">  <!-- Header -->  <div class="flex items-center justify-between mb-6">
+<div id="app" class="min-h-screen p-6 pb-24">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
     <div>
       <div class="text-lg font-semibold">Tic Tac Toe Casino</div>
-      <div class="text-sm text-gray-400">Place your bet and play against the computer!</div>
+      <div class="text-sm text-gray-400">Place your bet and let the game play automatically!</div>
     </div>
     <span class="p-2 rounded-full bg-casinoCard shadow">
       <i data-lucide="grid" class="text-gray-300"></i>
@@ -50,27 +52,26 @@
         :class="['flex-1 py-2 rounded-xl font-semibold', selectedOdd===o ? 'bg-casinoPurple text-white' : 'bg-gray-700 text-gray-300']">
         X{{ o }}
       </button>
-    </div><button @click="startGame"
-  class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
-  <i data-lucide="play"></i> Play
-</button>
-
-  </div>  <!-- Game Board -->  <div class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6 grid grid-cols-3 gap-2 w-72 mx-auto">
-    <button v-for="(cell, index) in board" :key="index" @click="playerMove(index)"
-      :disabled="cell || !gameStarted || gameOver"
-      class="h-20 w-20 text-2xl font-bold rounded-lg bg-casinoDark border border-gray-700 flex items-center justify-center hover:bg-casinoPurple transition">
+    </div>
+    <button @click="startGame"
+      class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
+      <i data-lucide="play"></i> Play
+    </button>
+  </div>  <!-- Game Board (Optional display) -->  <div class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6 grid grid-cols-3 gap-2 w-72 mx-auto">
+    <button v-for="(cell, index) in board" :key="index"
+      class="h-20 w-20 text-2xl font-bold rounded-lg bg-casinoDark border border-gray-700 flex items-center justify-center">
       {{ cell }}
     </button>
   </div>  <!-- Game Result -->  <div class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6 text-center text-lg">
     <div v-if="gameOver">{{ statusMessage }}</div>
-    <div v-else-if="gameStarted">🕹️ Your turn</div>
     <div v-else>🎲 Waiting for bet...</div>
   </div>  <!-- Notification -->  <transition name="fade">
     <div v-if="notification.message"
       :class="['mt-4 p-4 rounded-lg text-white font-medium', notification.type === 'success' ? 'bg-successGreen' : notification.type === 'error' ? 'bg-errorRed' : 'bg-infoBlue']">
       {{ notification.message }}
     </div>
-  </transition></div><!-- Bottom Navigation --><div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+  </transition>
+</div><!-- Bottom Navigation --><div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
   <a href="https://coinsphare.online/" class="flex flex-col items-center">
     <i data-lucide="home" class="text-gray-400"></i>
     <span class="text-xs text-gray-400 mt-1">Home</span>
@@ -89,7 +90,6 @@
   </a>
 </div><script>
 const { createApp } = Vue;
-
 createApp({
   data() {
     return {
@@ -98,27 +98,22 @@ createApp({
       odds: [2,3,4,5],
       selectedOdd: 2,
       board: Array(9).fill(null),
-      gameStarted: false,
       gameOver: false,
       statusMessage: "",
       notification: {message:"", type:"info"},
-      playerWins: false // Track outcome for this round
     };
   },
   mounted() {
-    setTimeout(()=>lucide.createIcons(), 100);
+    setTimeout(()=>lucide.createIcons(),100);
     this.token = localStorage.getItem("casino_token");
     if(!this.token){ alert("Login required"); window.location.href="/login"; }
   },
   methods:{
     async startGame(){
       if(!this.betAmount || this.betAmount<100)
-        return this.showNotification("Enter a valid bet amount (min ₦100)", "error");
+        return this.showNotification("Enter a valid bet amount (min ₦100)","error");
 
-      // Decide outcome now: 30% player win, 70% computer win
-      this.playerWins = Math.random() < 0.3;
-
-      this.showNotification("Debiting wallet…", "info");
+      this.showNotification("Debiting wallet…","info");
       try{
         const debitRes = await fetch("https://favour-amaaavl.xyz/api/fund/sub", {
           method:"POST",
@@ -134,61 +129,26 @@ createApp({
         if(!debitData.status)
           return this.showNotification("Debit failed: "+(debitData.message||"Unknown error"),"error");
 
-        this.showNotification("Bet accepted! Start playing...", "success");
-        this.board = Array(9).fill(null);
-        this.gameStarted = true;
-        this.gameOver = false;
-        this.statusMessage = "";
+        // Decide outcome immediately
+        const playerWins = Math.random() < 0.3; // 30% chance player wins
+        this.simulateGame(playerWins);
+
       }catch(err){
         this.showNotification("Request failed: "+err.message,"error");
       }
     },
-    playerMove(index){
-      if(this.board[index] || this.gameOver || !this.gameStarted) return;
-      this.board[index]="X";
+    async simulateGame(playerWins){
+      // Fill board randomly (optional visual)
+      const symbols = playerWins ? ["X","X","X","O","O","O","O","O","O"] : ["O","O","O","X","X","X","X","X","X"];
+      this.board = symbols.sort(()=>Math.random()-0.5);
 
-      if(this.playerWins){
-        // Force player to win
-        if(this.board.filter(c=>c===null).length<=1){
-          this.endGame(true); return;
-        } else setTimeout(this.computerMove,200);
-      } else {
-        // Player will lose
-        setTimeout(this.computerMove,200);
-      }
-    },
-    computerMove(){
-      if(this.gameOver) return;
-      const emptyCells=this.board.map((v,i)=>v===null?i:null).filter(i=>i!==null);
+      // Wait a short moment to simulate game
+      await new Promise(r=>setTimeout(r,500));
 
-      // Fill cell randomly
-      let moveIndex = emptyCells[Math.floor(Math.random()*emptyCells.length)];
-      this.board[moveIndex]="O";
-
-      // Check if computer should win
-      if(!this.playerWins && this.board.filter(c=>c===null).length<=1){
-        this.endGame(false); return;
-      }
-
-      if(this.playerWins && this.checkWinner("X")){
-        this.endGame(true); return;
-      }
-      if(!this.playerWins && this.checkWinner("O")){
-        this.endGame(false); return;
-      }
-
-      if(!this.board.includes(null)) this.endGame(null);
-    },
-    checkWinner(player){
-      const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-      return wins.some(indices=>indices.every(i=>this.board[i]===player));
-    },
-    async endGame(playerWon){
-      this.gameOver=true;
-      let message="";
-      if(playerWon===true){
-        message=`🎉 You won!`;
+      this.gameOver = true;
+      if(playerWins){
         const winAmount = Number(this.betAmount)*this.selectedOdd;
+        this.statusMessage = `🎉 You won ₦${winAmount}!`;
         try{
           const creditRes = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
             method:"POST",
@@ -207,14 +167,10 @@ createApp({
         }catch(e){
           this.showNotification("Credit failed: "+e.message,"error");
         }
-      } else if(playerWon===false){
-        message=`💻 Computer won!`;
-        this.showNotification("Oops! The computer wins!","error");
       } else {
-        message=`🤝 Draw!`;
-        this.showNotification("It's a draw!","info");
+        this.statusMessage = "💻 Computer won!";
+        this.showNotification("Oops! The computer wins!","error");
       }
-      this.statusMessage=message;
     },
     showNotification(msg,type){
       this.notification.message=msg;
@@ -224,9 +180,7 @@ createApp({
   }
 }).mount("#app");
 </script><style>
-.fade-enter-active,
-.fade-leave-active{transition:opacity 0.5s;}
-.fade-enter-from,
-.fade-leave-to{opacity:0;}
+.fade-enter-active,.fade-leave-active{transition:opacity 0.5s;}
+.fade-enter-from,.fade-leave-to{opacity:0;}
 </style></body>
-        </html>
+</html>
