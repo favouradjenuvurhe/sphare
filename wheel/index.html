@@ -2,12 +2,9 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fortune Wheel</title>
-
-  <!-- Inter Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Fortune Wheel</title>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -24,9 +21,7 @@
             errorRed: "#dc3545",
             infoBlue: "#0d6efd"
           },
-          fontFamily: {
-            sans: ["Inter", "system-ui"]
-          }
+          fontFamily: { sans: ["Inter", "system-ui"] }
         }
       }
     };
@@ -34,46 +29,6 @@
 
   <!-- Vue -->
   <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
-
-  <!-- Lucide -->
-  <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
-
-  <style>
-    .wheel-container {
-      position: relative;
-      width: 300px;
-      height: 300px;
-      margin: 0 auto;
-      border-radius: 50%;
-      border: 8px solid #A56BFF;
-      overflow: hidden;
-      transform: rotate(0deg);
-      transition: transform 5s cubic-bezier(0.33, 1, 0.68, 1);
-    }
-
-    .wheel-segment {
-      position: absolute;
-      width: 50%;
-      height: 50%;
-      top: 50%;
-      left: 50%;
-      transform-origin: 0% 0%;
-      background: conic-gradient(#FF5A5A 0deg 10deg, #FFA500 10deg 20deg, #28a745 20deg 30deg, #0d6efd 30deg 40deg, #CFAAFF 40deg 50deg, #A56BFF 50deg 60deg, #FF5A5A 60deg 70deg, #FFA500 70deg 80deg, #28a745 80deg 90deg, #0d6efd 90deg 100deg, #CFAAFF 100deg 110deg, #A56BFF 110deg 120deg, #FF5A5A 120deg 130deg, #FFA500 130deg 140deg, #28a745 140deg 150deg, #0d6efd 150deg 160deg, #CFAAFF 160deg 170deg, #A56BFF 170deg 180deg, #FF5A5A 180deg 190deg, #FFA500 190deg 200deg, #28a745 200deg 210deg, #0d6efd 210deg 220deg, #CFAAFF 220deg 230deg, #A56BFF 230deg 240deg, #FF5A5A 240deg 250deg, #FFA500 250deg 260deg, #28a745 260deg 270deg, #0d6efd 270deg 280deg, #CFAAFF 280deg 290deg, #A56BFF 290deg 300deg, #FF5A5A 300deg 310deg, #FFA500 310deg 320deg, #28a745 320deg 330deg, #0d6efd 330deg 340deg, #CFAAFF 340deg 350deg, #A56BFF 350deg 360deg));
-    }
-
-    .wheel-pointer {
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 12px solid transparent;
-      border-right: 12px solid transparent;
-      border-bottom: 20px solid #A56BFF;
-      z-index: 10;
-    }
-  </style>
 </head>
 
 <body class="bg-casinoDark text-white font-sans antialiased">
@@ -82,12 +37,9 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <div class="text-lg font-semibold">Fortune Wheel</div>
-        <div class="text-sm text-gray-400">Spin the wheel and try your luck!</div>
+        <div class="text-lg font-semibold">Virtual Fortune Wheel</div>
+        <div class="text-sm text-gray-400">Pick a number and spin!</div>
       </div>
-      <span class="p-2 rounded-full bg-casinoCard shadow">
-        <i data-lucide="dollar-sign" class="text-gray-300"></i>
-      </span>
     </div>
 
     <!-- Bet Input -->
@@ -95,12 +47,12 @@
       <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
       <input type="number" v-model="betAmount"
         class="mt-2 w-full p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
-        placeholder="e.g. 1000" />
+        placeholder="1000" />
 
       <label class="text-gray-300 text-sm mt-4">Pick a Number (0–36)</label>
       <input type="number" v-model="selectedNumber"
         class="mt-2 w-full p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
-        placeholder="e.g. 17" min="0" max="36" />
+        placeholder="17" min="0" max="36" />
 
       <label class="text-gray-300 text-sm mt-4">Select Odds</label>
       <div class="flex gap-3 mt-2">
@@ -111,15 +63,18 @@
       </div>
 
       <button @click="spinWheel"
-        class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
-        <i data-lucide="play"></i> Spin Wheel
-      </button>
+        class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold">Spin Wheel</button>
     </div>
 
-    <!-- Wheel Display -->
+    <!-- Wheel Canvas -->
     <div class="relative bg-casinoCard p-5 rounded-2xl shadow-lg mb-6 flex justify-center items-center">
-      <div class="wheel-pointer"></div>
-      <div class="wheel-container" ref="wheel"></div>
+      <canvas ref="wheelCanvas" width="300" height="300"></canvas>
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-16 border-b-casinoPurple z-10"></div>
+    </div>
+
+    <!-- Result -->
+    <div class="text-center text-2xl mt-4" v-if="rouletteResult !== null">
+      🎯 Result: {{ rouletteResult }}
     </div>
 
     <!-- Notification -->
@@ -145,35 +100,73 @@
           selectedOdd: 2,
           rouletteResult: null,
           notification: { message: "", type: "info" },
-          spinning: false
+          spinning: false,
+          wheelNumbers: Array.from({ length: 37 }, (_, i) => i),
+          wheelColors: []
         };
       },
       mounted() {
-        setTimeout(() => lucide.createIcons(), 100);
         this.token = localStorage.getItem("casino_token");
         if (!this.token) {
           alert("Login required");
           window.location.href = "/login";
         }
+        this.generateColors();
+        this.drawWheel(0);
       },
       methods: {
+        generateColors() {
+          this.wheelColors = this.wheelNumbers.map(n => {
+            if (n === 0) return "#28a745"; // green
+            return n % 2 === 0 ? "#000000" : "#FF0000"; // black/red
+          });
+        },
+        drawWheel(rotation) {
+          const canvas = this.$refs.wheelCanvas;
+          const ctx = canvas.getContext("2d");
+          const center = canvas.width / 2;
+          const radius = center - 5;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.save();
+          ctx.translate(center, center);
+          ctx.rotate(rotation);
+          const sliceAngle = (2 * Math.PI) / 37;
+          this.wheelNumbers.forEach((num, i) => {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, radius, i * sliceAngle, (i + 1) * sliceAngle);
+            ctx.fillStyle = this.wheelColors[i];
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.stroke();
+            ctx.save();
+            ctx.rotate(i * sliceAngle + sliceAngle / 2);
+            ctx.translate(radius - 20, 0);
+            ctx.rotate(Math.PI / 2);
+            ctx.fillStyle = "#fff";
+            ctx.font = "14px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(num, 0, 0);
+            ctx.restore();
+          });
+          ctx.restore();
+        },
         async spinWheel() {
           if (this.spinning) return;
-          if (!this.betAmount || this.betAmount < 100) return this.showNotification("Enter a valid bet amount (min ₦100)", "error");
-          if (this.selectedNumber === "" || this.selectedNumber < 0 || this.selectedNumber > 36) return this.showNotification("Pick a number between 0 and 36", "error");
+          if (!this.betAmount || this.betAmount < 100) return this.showNotification("Enter valid bet (min ₦100)", "error");
+          if (this.selectedNumber === "" || this.selectedNumber < 0 || this.selectedNumber > 36) return this.showNotification("Pick number 0–36", "error");
           if (!this.selectedOdd) return this.showNotification("Select odds!", "error");
 
           this.spinning = true;
           this.showNotification("Debiting wallet…", "info");
 
-          // Debit wallet first
+          // Debit wallet API
           const debitPayload = {
             token: this.token,
             amount: Number(this.betAmount),
             reference: "DEBIT" + Date.now(),
             description: "Fortune Wheel Bet"
           };
-
           try {
             const debitRes = await fetch("https://favour-amaaavl.xyz/api/fund/sub", {
               method: "POST",
@@ -186,55 +179,62 @@
               return this.showNotification("Debit failed: " + (debitData.message || "Unknown error"), "error");
             }
 
-            // Determine spin result
-            const wheelNumbers = Array.from({ length: 37 }, (_, i) => i);
-            const resultNumber = wheelNumbers[Math.floor(Math.random() * 37)];
-            const spins = 5; // number of spins before stop
-            const degreePerNumber = 360 / 37;
-            const finalDegree = 360 * spins + (resultNumber * degreePerNumber);
+            // Spin wheel animation
+            const resultNumber = this.wheelNumbers[Math.floor(Math.random() * 37)];
+            const sliceAngle = (2 * Math.PI) / 37;
+            const spins = 6; // full spins
+            const finalRotation = spins * 2 * Math.PI - resultNumber * sliceAngle - sliceAngle / 2;
+            const duration = 5000;
+            const startTime = performance.now();
 
-            // Animate wheel
-            this.$refs.wheel.style.transition = "transform 5s cubic-bezier(0.33, 1, 0.68, 1)";
-            this.$refs.wheel.style.transform = `rotate(${finalDegree}deg)`;
-
-            setTimeout(async () => {
-              this.rouletteResult = resultNumber;
-
-              // Determine win/loss
-              const win = Math.random() < 0.3 && Number(this.selectedNumber) === this.rouletteResult;
-              if (win) {
-                const winAmount = Number(this.betAmount) * this.selectedOdd;
-
-                // Credit wallet
-                const creditPayload = {
-                  token: this.token,
-                  amount: winAmount,
-                  reference: "CREDIT" + Date.now(),
-                  description: `Fortune Wheel Win X${this.selectedOdd}`
-                };
-
-                const creditRes = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(creditPayload)
-                });
-
-                const creditData = await creditRes.json();
-                if (creditData.status) {
-                  this.showNotification(`🎉 You won ₦${winAmount}!`, "success");
-                } else {
-                  this.showNotification("Credit failed: " + (creditData.message || ""), "error");
-                }
-              } else {
-                this.showNotification(`😞 You lost! The wheel landed on ${this.rouletteResult}`, "error");
-              }
-              this.spinning = false;
-            }, 5200);
+            const animate = (time) => {
+              let t = (time - startTime) / duration;
+              if (t > 1) t = 1;
+              const ease = 1 - Math.pow(1 - t, 3);
+              const rotation = ease * finalRotation;
+              this.drawWheel(rotation);
+              if (t < 1) requestAnimationFrame(animate);
+              else this.finishSpin(resultNumber);
+            };
+            requestAnimationFrame(animate);
 
           } catch (err) {
             this.spinning = false;
             this.showNotification("Request failed: " + err.message, "error");
           }
+        },
+        async finishSpin(resultNumber) {
+          this.rouletteResult = resultNumber;
+          const win = Number(this.selectedNumber) === resultNumber;
+
+          if (win) {
+            const winAmount = Number(this.betAmount) * this.selectedOdd;
+            // Credit wallet API
+            const creditPayload = {
+              token: this.token,
+              amount: winAmount,
+              reference: "CREDIT" + Date.now(),
+              description: `Fortune Wheel Win X${this.selectedOdd}`
+            };
+            try {
+              const creditRes = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(creditPayload)
+              });
+              const creditData = await creditRes.json();
+              if (creditData.status) {
+                this.showNotification(`🎉 You won ₦${winAmount}!`, "success");
+              } else {
+                this.showNotification("Credit failed: " + (creditData.message || ""), "error");
+              }
+            } catch (err) {
+              this.showNotification("Credit request failed: " + err.message, "error");
+            }
+          } else {
+            this.showNotification(`😞 You lost! Landed on ${resultNumber}`, "error");
+          }
+          this.spinning = false;
         },
         showNotification(message, type) {
           this.notification.message = message;
@@ -247,14 +247,10 @@
 
   <style>
     .fade-enter-active,
-    .fade-leave-active {
-      transition: opacity 0.5s;
-    }
+    .fade-leave-active { transition: opacity 0.5s; }
     .fade-enter-from,
-    .fade-leave-to {
-      opacity: 0;
-    }
+    .fade-leave-to { opacity: 0; }
   </style>
 </body>
 
-          </html>
+</html>
