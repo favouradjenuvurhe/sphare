@@ -19,7 +19,6 @@
             casinoDark: "#0C0A16",
             casinoCard: "#151226",
             casinoPurple: "#A56BFF",
-            casinoGlow: "#CFAAFF",
             successGreen: "#28a745",
             errorRed: "#dc3545",
             infoBlue: "#0d6efd"
@@ -77,11 +76,11 @@
 
     <!-- Game Grid -->
     <div v-if="gameStarted" class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6">
-      <div class="grid grid-cols-5 gap-2">
+      <div class="grid grid-cols-5 gap-3">
         <button v-for="(tile, index) in grid" :key="index"
           :disabled="tile.revealed || gameOver"
           @click="revealTile(index)"
-          class="w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl"
+          class="w-16 h-16 rounded-xl flex items-center justify-center font-bold text-2xl"
           :class="tile.revealed ? (tile.mine ? 'bg-errorRed' : 'bg-successGreen') : 'bg-gray-700'">
           <span v-if="tile.revealed">
             {{ tile.mine ? "💣" : "✔️" }}
@@ -180,7 +179,7 @@
           if (!debitData.status)
             return this.showNotification("Debit failed!", "error");
 
-          // Initialize grid
+          // Initialize Grid
           this.gameStarted = true;
           this.grid = Array.from({ length: 25 }, () => ({ mine: false, revealed: false }));
           this.placeMines();
@@ -202,7 +201,7 @@
 
           this.grid[index].revealed = true;
 
-          // Hit a mine
+          // Hit mine → Lose 100%
           if (this.grid[index].mine) {
             this.gameOver = true;
             this.showNotification("💣 You hit a mine! You lost.", "error");
@@ -211,15 +210,13 @@
 
           this.safeRevealed++;
 
-          // Auto-win chance (30%)
-          if (Math.random() < 0.3) {
+          // ---- REAL 30% WIN CHANCE ----
+          const winChance = Math.random();
+          if (winChance <= 0.30) {
             return this.cashout(true);
           }
 
-          // Win by clearing 10 tiles
-          if (this.safeRevealed >= 10) {
-            return this.cashout(true);
-          }
+          // Continue game normally…
         },
 
         async cashout(auto = false) {
@@ -232,7 +229,7 @@
             token: this.token,
             amount: winAmount,
             reference: "CREDIT" + Date.now(),
-            description: auto ? "Auto-Win Minesweeper" : "Minesweeper Cashout"
+            description: auto ? "Auto Win Minesweeper (30%)" : "Minesweeper Cashout"
           };
 
           const creditRes = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
@@ -269,4 +266,4 @@
   </style>
 </body>
 
-  </html>
+</html>
