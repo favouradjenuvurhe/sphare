@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minesweeper Casino</title>
+
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: "#0C0A16",
+            casinoCard: "#151226",
+            casinoPurple: "#A56BFF",
+            casinoGlow: "#CFAAFF",
+            successGreen: "#28a745",
+            errorRed: "#dc3545",
+            infoBlue: "#0d6efd"
+          },
+          fontFamily: {
+            sans: ["Inter", "system-ui"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+
+  <!-- Lucide -->
+  <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+</head>
+
+<body class="bg-casinoDark text-white font-sans antialiased">
+  <div id="app" class="min-h-screen p-6 pb-24">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <div class="text-lg font-semibold">Minesweeper Casino</div>
+        <div class="text-sm text-gray-400">Avoid the mines & win!</div>
+      </div>
+
+      <span class="p-2 rounded-full bg-casinoCard shadow">
+        <i data-lucide="bomb" class="text-gray-300"></i>
+      </span>
+    </div>
+
+    <!-- Bet Input -->
+    <div v-if="!gameStarted" class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6">
+      <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
+      <input type="number" v-model="betAmount"
+        class="mt-2 w-full p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
+        placeholder="e.g. 1000" />
+
+      <label class="text-gray-300 text-sm mt-4">Select Multiplier</label>
+      <div class="flex gap-3 mt-2">
+        <button v-for="o in odds" :key="o" @click="selectedOdd=o"
+          :class="['flex-1 py-2 rounded-xl font-semibold', selectedOdd===o ? 'bg-casinoPurple text-white' : 'bg-gray-700 text-gray-300']">
+          X{{ o }}
+        </button>
+      </div>
+
+      <button @click="startGame"
+        class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
+        <i data-lucide="play"></i> Start Game
+      </button>
+    </div>
+
+    <!-- Game Grid -->
+    <div v-if="gameStarted" class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6">
+      <div class="grid grid-cols-5 gap-2">
+        <button v-for="(tile, index) in grid" :key="index"
+          :disabled="tile.revealed || gameOver"
+          @click="revealTile(index)"
+          class="w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl"
+          :class="tile.revealed ? (tile.mine ? 'bg-errorRed' : 'bg-successGreen') : 'bg-gray-700'">
+          <span v-if="tile.revealed">
+            {{ tile.mine ? "💣" : "✔️" }}
+          </span>
+        </button>
+      </div>
+
+      <button v-if="!gameOver" @click="cashout"
+        class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold">
+        Cashout
+      </button>
+    </div>
+
+    <!-- Notification -->
+    <transition name="fade">
+      <div v-if="notification.message"
+        :class="['mt-4 p-4 rounded-lg text-white font-medium', notification.type === 'success' ? 'bg-successGreen' : notification.type === 'error' ? 'bg-errorRed' : 'bg-infoBlue']">
+        {{ notification.message }}
+      </div>
+    </transition>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+    <a href="https://coinsphare.online/" class="flex flex-col items-center">
+      <i data-lucide="home" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Home</span>
+    </a>
+    <a href="/games" class="flex flex-col items-center">
+      <i data-lucide="gamepad-2" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Games</span>
+    </a>
+    <a href="/deposit" class="flex flex-col items-center">
+      <i data-lucide="arrow-big-up" class="text-casinoPurple"></i>
+      <span class="text-xs text-casinoPurple mt-1">Deposit</span>
+    </a>
+    <a href="/profile" class="flex flex-col items-center">
+      <i data-lucide="user" class="text-gray-400"></i>
+      <span class="text-xs text-gray-400 mt-1">Profile</span>
+    </a>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          token: "",
+          betAmount: "",
+          odds: [1.5, 2, 3, 5],
+          selectedOdd: 1.5,
+
+          gameStarted: false,
+          gameOver: false,
+          grid: [],
+          mines: 5,
+          safeRevealed: 0,
+
+          notification: { message: "", type: "info" }
+        };
+      },
+
+      mounted() {
+        setTimeout(() => lucide.createIcons(), 100);
+
+        this.token = localStorage.getItem("casino_token");
+        if (!this.token) {
+          alert("Login required");
+          window.location.href = "/login";
+        }
+      },
+
+      methods: {
+        async startGame() {
+          if (!this.betAmount || this.betAmount < 100)
+            return this.showNotification("Enter a valid bet amount (min ₦100)", "error");
+
+          this.showNotification("Debiting wallet…", "info");
+
+          const debitPayload = {
+            token: this.token,
+            amount: Number(this.betAmount),
+            reference: "DEBIT" + Date.now(),
+            description: "Minesweeper Bet"
+          };
+
+          const debitRes = await fetch("https://favour-amaaavl.xyz/api/fund/sub", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(debitPayload)
+          });
+
+          const debitData = await debitRes.json();
+          if (!debitData.status)
+            return this.showNotification("Debit failed!", "error");
+
+          // Initialize grid
+          this.gameStarted = true;
+          this.grid = Array.from({ length: 25 }, () => ({ mine: false, revealed: false }));
+          this.placeMines();
+        },
+
+        placeMines() {
+          let placed = 0;
+          while (placed < this.mines) {
+            const index = Math.floor(Math.random() * 25);
+            if (!this.grid[index].mine) {
+              this.grid[index].mine = true;
+              placed++;
+            }
+          }
+        },
+
+        async revealTile(index) {
+          if (this.grid[index].revealed || this.gameOver) return;
+
+          this.grid[index].revealed = true;
+
+          // Hit a mine
+          if (this.grid[index].mine) {
+            this.gameOver = true;
+            this.showNotification("💣 You hit a mine! You lost.", "error");
+            return;
+          }
+
+          this.safeRevealed++;
+
+          // Auto-win chance (30%)
+          if (Math.random() < 0.3) {
+            return this.cashout(true);
+          }
+
+          // Win by clearing 10 tiles
+          if (this.safeRevealed >= 10) {
+            return this.cashout(true);
+          }
+        },
+
+        async cashout(auto = false) {
+          if (this.gameOver) return;
+
+          this.gameOver = true;
+          const winAmount = Number(this.betAmount) * this.selectedOdd;
+
+          const creditPayload = {
+            token: this.token,
+            amount: winAmount,
+            reference: "CREDIT" + Date.now(),
+            description: auto ? "Auto-Win Minesweeper" : "Minesweeper Cashout"
+          };
+
+          const creditRes = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(creditPayload)
+          });
+
+          const creditData = await creditRes.json();
+          if (creditData.status)
+            this.showNotification(`🎉 You won ₦${winAmount}!`, "success");
+          else
+            this.showNotification("Credit failed!", "error");
+        },
+
+        showNotification(message, type) {
+          this.notification.message = message;
+          this.notification.type = type;
+          setTimeout(() => { this.notification.message = ""; }, 4000);
+        }
+      }
+    }).mount("#app");
+  </script>
+
+  <style>
+    .fade-enter-active,
+    .fade-leave-active {
+      transition: opacity 0.5s;
+    }
+    .fade-enter-from,
+    .fade-leave-to {
+      opacity: 0;
+    }
+  </style>
+</body>
+
+  </html>
