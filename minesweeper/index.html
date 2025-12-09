@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Minesweeper Casino</title>
+  <title>Minesweeper</title>
 
   <!-- Inter Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -76,7 +76,7 @@
 
     <!-- Game Grid -->
     <div v-if="gameStarted" class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6">
-      <div class="grid grid-cols-5 gap-3">
+      <div class="grid grid-cols-5 gap-4">
         <button v-for="(tile, index) in grid" :key="index"
           :disabled="tile.revealed || gameOver"
           @click="revealTile(index)"
@@ -138,7 +138,7 @@
           gameStarted: false,
           gameOver: false,
           grid: [],
-          mines: 5,
+          mines: 8,  // HARD MODE ONLY
           safeRevealed: 0,
 
           notification: { message: "", type: "info" }
@@ -179,9 +179,15 @@
           if (!debitData.status)
             return this.showNotification("Debit failed!", "error");
 
-          // Initialize Grid
+          // Start Game (Hard Mode)
           this.gameStarted = true;
-          this.grid = Array.from({ length: 25 }, () => ({ mine: false, revealed: false }));
+          this.gameOver = false;
+          this.safeRevealed = 0;
+
+          this.grid = Array.from({ length: 25 }, () => ({
+            mine: false, revealed: false
+          }));
+
           this.placeMines();
         },
 
@@ -196,12 +202,11 @@
           }
         },
 
-        async revealTile(index) {
+        revealTile(index) {
           if (this.grid[index].revealed || this.gameOver) return;
 
           this.grid[index].revealed = true;
 
-          // Hit mine → Lose 100%
           if (this.grid[index].mine) {
             this.gameOver = true;
             this.showNotification("💣 You hit a mine! You lost.", "error");
@@ -209,17 +214,9 @@
           }
 
           this.safeRevealed++;
-
-          // ---- REAL 30% WIN CHANCE ----
-          const winChance = Math.random();
-          if (winChance <= 0.30) {
-            return this.cashout(true);
-          }
-
-          // Continue game normally…
         },
 
-        async cashout(auto = false) {
+        async cashout() {
           if (this.gameOver) return;
 
           this.gameOver = true;
@@ -229,7 +226,7 @@
             token: this.token,
             amount: winAmount,
             reference: "CREDIT" + Date.now(),
-            description: auto ? "Auto Win Minesweeper (30%)" : "Minesweeper Cashout"
+            description: "Minesweeper Cashout"
           };
 
           const creditRes = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
