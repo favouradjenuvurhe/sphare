@@ -32,8 +32,6 @@
 
 <!-- Vue 3 -->
 <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
-<!-- Lucide -->
-<script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
 
 <style>
 body { background: #0C0A16; color: #fff; font-family: Inter, sans-serif; }
@@ -53,7 +51,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="text-2xl font-semibold">Mines</div>
-      <div class="text-sm text-gray-400">Uncover gems without hitting a mine! (Winning chance: 25%)</div>
+      <div class="text-sm text-gray-400">Uncover gems carefully! Mines cover 75% of the grid.</div>
     </div>
   </div>
 
@@ -76,17 +74,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     </div>
   </div>
 
-  <!-- Bet & Mine Selection (below the grid) -->
+  <!-- Bet Amount -->
   <div class="card p-5 rounded-2xl shadow-lg mb-6">
     <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
     <input type="number" v-model="betAmount" min="100"
            class="mt-2 w-full p-3 rounded-xl bg-ssBg border border-gray-700 focus:border-ssBlue outline-none"
            placeholder="e.g. 500" />
-
-    <label class="text-gray-300 text-sm mt-3">Select Mine Count</label>
-    <select v-model="mineCount" class="mt-2 w-full p-3 rounded-xl bg-ssBg border border-gray-700 outline-none">
-      <option v-for="n in [3,5,7,10]" :key="n" :value="n">{{ n }} Mines</option>
-    </select>
 
     <div class="flex gap-3 mt-4">
       <button v-if="!roundStarted && !roundOver" @click="startRound"
@@ -114,9 +107,7 @@ createApp({
   data() {
     return {
       token: "",
-      balance: 0,
       betAmount: "",
-      mineCount: 5,
       roundStarted: false,
       roundOver: false,
       grid: Array(25).fill().map(()=>({type:'empty', revealed:false})), // always initialized
@@ -149,13 +140,11 @@ createApp({
       // reset grid
       this.grid = Array(25).fill().map(()=>({type:'gem', revealed:false}));
 
-      // place mines with 25% chance (winning chance)
-      let minesToPlace = this.mineCount;
-      let indices = Array.from({length:25},(_,i)=>i);
-      while(minesToPlace>0){
-        let idx = indices.splice(Math.floor(Math.random()*indices.length),1)[0];
+      // place mines (75% of 25 = 18 mines, 7 gems)
+      let mineIndices = Array.from({length:25},(_,i)=>i);
+      for(let i=0;i<18;i++){
+        let idx = mineIndices.splice(Math.floor(Math.random()*mineIndices.length),1)[0];
         this.grid[idx].type = 'mine';
-        minesToPlace--;
       }
 
       this.showNotification('Debiting wallet…','info');
@@ -174,7 +163,7 @@ createApp({
         this.roundOver=true;
       } else {
         this.gemsFound++;
-        this.multiplier = 1 + this.gemsFound * (25/this.mineCount*0.2);
+        this.multiplier = 1 + this.gemsFound * 0.5; // simple multiplier per gem
       }
     },
     cashOut(){
