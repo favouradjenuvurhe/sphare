@@ -21,8 +21,7 @@
           ssRed: "#FF6F61",
           successGreen: "#28a745",
           errorRed: "#dc3545",
-          infoBlue: "#0d6efd",
-          gemYellow: "#FFD700"
+          infoBlue: "#0d6efd"
         },
         fontFamily: { sans: ["Inter", "system-ui"] }
       }
@@ -36,15 +35,15 @@
 <style>
 body { background: #0C0A16; color: #fff; font-family: Inter, sans-serif; }
 .card { background: #151226; border: 1px solid rgba(255,255,255,0.05); }
-.grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top:10px; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top:10px; } /* 4 columns */
 .cell { width: 60px; height: 60px; background: rgba(255,255,255,0.05); border-radius: 8px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; cursor:pointer; transition: background 0.3s; }
 .cell.gem { background: #FFD700; color: #000; font-weight:bold; }
 .cell.mine { background: #FF6F61; color: #fff; font-weight:bold; }
 .cell.revealed { cursor: default; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Updated Mines Grid Card */
-.grid-card { background: #FFD700; border: 1px solid #e6c200; }
+/* Grid card styling */
+.grid-card { background: #151226; border: 1px solid rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 1rem; }
 </style>
 </head>
 <body>
@@ -54,7 +53,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="text-2xl font-semibold">Mines</div>
-      <div class="text-sm text-gray-800">Uncover gems carefully!</div>
+      <div class="text-sm text-gray-400">Uncover gems carefully!</div>
     </div>
   </div>
 
@@ -65,8 +64,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     </div>
   </transition>
 
-  <!-- Mines Grid -->
-  <div class="card p-6 rounded-2xl shadow-lg mb-6 text-center grid-card">
+  <!-- Mines Grid Card -->
+  <div class="grid-card text-center mb-6 shadow-lg">
     <div class="text-lg font-semibold mb-4">Gems: {{ gemsFound }} | Multiplier: {{ multiplier.toFixed(2) }}x</div>
     <div class="grid">
       <div v-for="(cell,index) in grid" :key="index"
@@ -113,7 +112,7 @@ createApp({
       betAmount: "",
       roundStarted: false,
       roundOver: false,
-      grid: Array(25).fill().map(()=>({type:'empty', revealed:false})), 
+      grid: Array(24).fill().map(()=>({type:'empty', revealed:false})), // 6x4
       gemsFound: 0,
       multiplier: 1,
       notification: { message:'', type:'info' }
@@ -141,10 +140,10 @@ createApp({
       this.multiplier = 1;
 
       // Reset grid
-      this.grid = Array(25).fill().map(()=>({type:'gem', revealed:false}));
+      this.grid = Array(24).fill().map(()=>({type:'gem', revealed:false}));
 
-      // Place mines 75% of grid
-      let mineIndices = Array.from({length:25},(_,i)=>i);
+      // Place mines (~75% = 18 mines)
+      let mineIndices = Array.from({length:24},(_,i)=>i);
       for(let i=0;i<18;i++){
         let idx = mineIndices.splice(Math.floor(Math.random()*mineIndices.length),1)[0];
         this.grid[idx].type = 'mine';
@@ -157,13 +156,12 @@ createApp({
       this.grid[index].revealed = true;
       if(this.grid[index].type==='mine'){
         this.showNotification('💥 Mine hit! You lost your bet.','error');
-        // Reveal all cells on loss
-        this.grid.forEach(c=>c.revealed=true);
+        this.grid.forEach(c=>c.revealed=true); // reveal all
         this.roundStarted=false;
         this.roundOver=true;
       } else {
         this.gemsFound++;
-        this.multiplier = 1 + this.gemsFound * 0.5; 
+        this.multiplier = 1 + this.gemsFound * 0.5;
       }
     },
     cashOut(){
@@ -178,7 +176,7 @@ createApp({
       this.roundOver=false;
       this.gemsFound=0;
       this.multiplier=1;
-      this.grid = Array(25).fill().map(()=>({type:'empty', revealed:false}));
+      this.grid = Array(24).fill().map(()=>({type:'empty', revealed:false}));
       this.showNotification('Ready for new round — place your bet!','info');
     }
   }
