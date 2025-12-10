@@ -66,12 +66,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
   <!-- Mines Grid (always shown) -->
   <div class="card p-6 rounded-2xl shadow-lg mb-6 text-center">
-    <div class="text-lg font-semibold mb-4">Gems Found: {{ gemsFound }} | Multiplier: {{ multiplier.toFixed(2) }}x</div>
+    <div class="text-lg font-semibold mb-4">Gems: {{ gemsFound }} | Multiplier: {{ multiplier.toFixed(2) }}x</div>
     <div class="grid">
       <div v-for="(cell,index) in grid" :key="index"
            :class="['cell', cell.revealed ? (cell.type==='gem'?'gem':'mine') : '', cell.revealed?'revealed':'']"
            @click="revealCell(index)">
-        <span v-if="cell.revealed">{{ cell.type==='gem' ? '★' : '💣' }}</span>
+        <span v-if="cell.revealed">{{ cell.type==='gem' ? '💎' : '💣' }}</span>
       </div>
     </div>
   </div>
