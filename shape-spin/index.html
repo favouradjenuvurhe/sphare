@@ -40,183 +40,173 @@
     .bottle { width: 100px; height: 100px; background: #FFD700; border-radius:50%; margin:auto; position:relative; transform-origin: 50% 50%; }
     .bottle::before { content:""; position:absolute; top:20%; left:48%; width:4px; height:60%; background:#000; border-radius:2px; }
     .spin-animation { transition: transform 2s cubic-bezier(0.33, 1, 0.68, 1); }
+    .arrow { position: absolute; left: 50%; transform: translateX(-50%); font-size: 2rem; }
+    .arrow-up { top: -40px; color: #4F9EFF; }
+    .arrow-down { bottom: -40px; color: #FF6F61; }
   </style>
 </head>
 <body>
-  <div id="app" class="min-h-screen p-6 pb-28 max-w-3xl mx-auto">
+<div id="app" class="min-h-screen p-6 pb-28 max-w-3xl mx-auto relative">
 
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <div class="text-2xl font-semibold">Shape Spin</div>
-        <div class="text-sm text-gray-400">Predict which direction the bottle will land: UP or DOWN!</div>
-      </div>
-      <div class="flex items-center gap-3">
-        <div class="text-sm text-gray-300">Balance</div>
-        <div class="px-3 py-1 rounded-full bg-gray-800 text-white font-semibold">₦<span>{{ displayBalance }}</span></div>
-      </div>
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="text-2xl font-semibold">Shape Spin</div>
+      <div class="text-sm text-gray-400">Predict which direction the bottle will land: UP or DOWN!</div>
     </div>
-
-    <!-- Notification -->
-    <transition name="fade">
-      <div v-if="notification.message" :class="['card p-4 rounded-xl mb-6 font-medium', notificationColor]">
-        {{ notification.message }}
-      </div>
-    </transition>
-
-    <!-- Bottle Spin Display -->
-    <div class="card p-6 rounded-2xl shadow-lg mb-6 text-center">
-      <div class="text-xl font-semibold mb-4">Spin the bottle and predict the outcome!</div>
-      <div class="bottle spin-animation" :style="{ transform: 'rotate(' + bottleRotation + 'deg)' }"></div>
-      <div v-if="spinResult !== ''" class="mt-4 text-lg font-bold" :class="spinResult === playerChoice ? 'text-successGreen' : 'text-errorRed'">
-        Result: {{ spinResult }}
-      </div>
-    </div>
-
-    <!-- Bet & Choices -->
-    <div class="card p-5 rounded-2xl shadow-lg mb-6">
-      <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
-      <input type="number" v-model="betAmount" min="100"
-             class="mt-2 w-full p-3 rounded-xl bg-ssBg border border-gray-700 focus:border-ssBlue outline-none"
-             placeholder="e.g. 500" />
-
-      <div class="flex gap-3 mt-4">
-        <button v-if="!roundStarted && !roundOver" @click="startRound('UP')"
-                class="flex-1 py-3 rounded-full bg-ssBlue text-black font-semibold flex items-center justify-center gap-2">
-          <i data-lucide="arrow-up"></i> UP
-        </button>
-        <button v-if="!roundStarted && !roundOver" @click="startRound('DOWN')"
-                class="flex-1 py-3 rounded-full bg-ssRed text-black font-semibold flex items-center justify-center gap-2">
-          <i data-lucide="arrow-down"></i> DOWN
-        </button>
-
-        <button v-if="roundOver" @click="newRound"
-                class="flex-1 py-3 rounded-full bg-infoBlue text-white font-semibold flex items-center justify-center gap-2">
-          <i data-lucide="rotate-ccw"></i> New Round
-        </button>
-      </div>
-
-      <div class="text-xs text-gray-400 mt-3">Min bet: ₦100 • 2x payout on correct prediction</div>
-    </div>
-
-    <!-- Bottom nav -->
-    <div class="fixed bottom-4 left-0 right-0 px-4">
-      <div class="max-w-3xl mx-auto">
-        <div class="bg-ssCard border border-gray-800 rounded-2xl p-3 flex justify-around">
-          <a href="/" class="flex flex-col items-center text-gray-400">
-            <i data-lucide="home"></i><span class="text-xs mt-1">Home</span>
-          </a>
-          <a href="/games" class="flex flex-col items-center text-gray-400">
-            <i data-lucide="gamepad-2"></i><span class="text-xs mt-1">Games</span>
-          </a>
-          <a href="/deposit" class="flex flex-col items-center text-ssBlue">
-            <i data-lucide="arrow-big-up"></i><span class="text-xs mt-1">Deposit</span>
-          </a>
-          <a href="/profile" class="flex flex-col items-center text-gray-400">
-            <i data-lucide="user"></i><span class="text-xs mt-1">Profile</span>
-          </a>
-        </div>
-      </div>
-    </div>
-
   </div>
 
-  <script>
-    const { createApp } = Vue;
+  <!-- Notification -->
+  <transition name="fade">
+    <div v-if="notification.message" :class="['card p-4 rounded-xl mb-6 font-medium', notificationColor]">
+      {{ notification.message }}
+    </div>
+  </transition>
 
-    createApp({
-      data() {
-        return {
-          token: "",
-          betAmount: "",
-          balance: 0.00,
-          roundStarted: false,
-          roundOver: false,
-          spinResult: "",
-          playerChoice: "",
-          bottleRotation: 0,
-          notification: { message: "", type: "info" }
-        };
-      },
-      computed: {
-        notificationColor() {
-          return this.notification.type === "success" ? "bg-successGreen" : this.notification.type === "error" ? "bg-errorRed" : "bg-infoBlue";
-        },
-        displayBalance() { return Number(this.balance).toFixed(2); }
-      },
-      mounted() {
-        setTimeout(() => lucide.createIcons(), 120);
-        this.token = localStorage.getItem("casino_token") || "DEMO_TOKEN";
-        if (!localStorage.getItem("casino_token")) this.balance = 5000.00;
-      },
-      methods: {
-        showNotification(msg, type='info') {
-          this.notification.message = msg;
-          this.notification.type = type;
-          setTimeout(() => { if (this.notification.message === msg) this.notification.message = ""; }, 4000);
-        },
-        async startRound(choice) {
-          if (!this.betAmount || Number(this.betAmount) < 100) {
-            return this.showNotification('Enter valid bet (min ₦100)', 'error');
-          }
-          this.playerChoice = choice;
-          this.roundStarted = true;
-          this.spinResult = '';
-          this.bottleRotation = 0;
-          this.showNotification('Debiting wallet…', 'info');
+  <!-- Bottle Spin Display -->
+  <div class="card p-6 rounded-2xl shadow-lg mb-6 text-center relative">
+    <div class="text-xl font-semibold mb-4">Spin the bottle and predict the outcome!</div>
 
-          // Debit wallet
-          try {
-            const debitPayload = { token:this.token, amount:Number(this.betAmount), reference:'DEBIT'+Date.now(), description:'ShapeSpin Bet' };
-            const res = await fetch('https://favour-amaaavl.xyz/api/fund/sub', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(debitPayload) });
-            const data = await res.json();
-            if (!data.status) return this.showNotification('Debit failed: '+data.message, 'error');
-            if (data.balance) this.balance = Number(data.balance);
-          } catch(err) { this.showNotification('Demo mode: round started', 'info'); }
+    <!-- Arrow indicator -->
+    <div v-if="roundStarted && playerChoice === 'UP'" class="arrow arrow-up">
+      <i data-lucide="arrow-up"></i>
+    </div>
+    <div v-if="roundStarted && playerChoice === 'DOWN'" class="arrow arrow-down">
+      <i data-lucide="arrow-down"></i>
+    </div>
 
-          // Spin animation
-          const spins = 5 + Math.floor(Math.random()*5);
-          const deg = (Math.random() < 0.5 ? 0 : 180) + 360*spins;
-          this.bottleRotation = deg;
+    <div class="bottle spin-animation" :style="{ transform: 'rotate(' + bottleRotation + 'deg)' }"></div>
 
-          setTimeout(() => { this.resolveSpin(); }, 2200);
-        },
-        async resolveSpin() {
-          // determine outcome: UP or DOWN
-          this.spinResult = (Math.random() < 0.5 ? 'UP':'DOWN');
-          this.roundStarted = false;
-          this.roundOver = true;
+    <div v-if="spinResult !== ''" class="mt-4 text-lg font-bold" :class="spinResult === playerChoice ? 'text-successGreen' : 'text-errorRed'">
+      Result: {{ spinResult }}
+    </div>
+  </div>
 
-          if (this.spinResult === this.playerChoice) {
-            const winAmount = Number(this.betAmount)*2;
-            this.showNotification(`🎉 You won ₦${winAmount.toFixed(2)}!`, 'success');
+  <!-- Bet & Choices -->
+  <div class="card p-5 rounded-2xl shadow-lg mb-6">
+    <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
+    <input type="number" v-model="betAmount" min="100"
+           class="mt-2 w-full p-3 rounded-xl bg-ssBg border border-gray-700 focus:border-ssBlue outline-none"
+           placeholder="e.g. 500" />
 
-            // Credit wallet
-            try {
-              const creditPayload = { token:this.token, amount:winAmount, reference:'CREDIT'+Date.now(), description:'ShapeSpin Win' };
-              const res = await fetch('https://favour-amaaavl.xyz/api/fund/add', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(creditPayload) });
-              const data = await res.json();
-              if (data.status && data.balance) this.balance = Number(data.balance);
-            } catch(err) { console.log('Demo credit'); }
-          } else {
-            this.showNotification('You lost this round.', 'error');
-          }
-        },
-        newRound() {
-          this.roundOver = false;
-          this.roundStarted = false;
-          this.spinResult = '';
-          this.playerChoice = '';
-          this.bottleRotation = 0;
-          this.showNotification('Ready for new round — place your bet!', 'info');
-        }
+    <div class="flex gap-3 mt-4">
+      <button v-if="!roundStarted && !roundOver" @click="startRound('UP')"
+              class="flex-1 py-3 rounded-full bg-ssBlue text-black font-semibold flex items-center justify-center gap-2">
+        <i data-lucide="arrow-up"></i> UP
+      </button>
+      <button v-if="!roundStarted && !roundOver" @click="startRound('DOWN')"
+              class="flex-1 py-3 rounded-full bg-ssRed text-black font-semibold flex items-center justify-center gap-2">
+        <i data-lucide="arrow-down"></i> DOWN
+      </button>
+
+      <button v-if="roundOver" @click="newRound"
+              class="flex-1 py-3 rounded-full bg-infoBlue text-white font-semibold flex items-center justify-center gap-2">
+        <i data-lucide="rotate-ccw"></i> New Round
+      </button>
+    </div>
+
+    <div class="text-xs text-gray-400 mt-3">Min bet: ₦100 • 2x payout on correct prediction</div>
+  </div>
+
+</div>
+
+<script>
+const { createApp } = Vue;
+createApp({
+  data() {
+    return {
+      token: "",
+      betAmount: "",
+      balance: 0.00,
+      roundStarted: false,
+      roundOver: false,
+      spinResult: "",
+      playerChoice: "",
+      bottleRotation: 0,
+      notification: { message: "", type: "info" }
+    };
+  },
+  computed: {
+    notificationColor() {
+      return this.notification.type === "success" ? "bg-successGreen" : this.notification.type === "error" ? "bg-errorRed" : "bg-infoBlue";
+    },
+    displayBalance() { return Number(this.balance).toFixed(2); }
+  },
+  mounted() {
+    setTimeout(() => lucide.createIcons(), 120);
+    this.token = localStorage.getItem("casino_token") || "DEMO_TOKEN";
+    if (!localStorage.getItem("casino_token")) this.balance = 5000.00;
+  },
+  methods: {
+    showNotification(msg, type='info') {
+      this.notification.message = msg;
+      this.notification.type = type;
+      setTimeout(() => { if (this.notification.message === msg) this.notification.message = ""; }, 4000);
+    },
+    async startRound(choice) {
+      if (!this.betAmount || Number(this.betAmount) < 100) {
+        return this.showNotification('Enter valid bet (min ₦100)', 'error');
       }
-    }).mount('#app');
-  </script>
+      this.playerChoice = choice;
+      this.roundStarted = true;
+      this.spinResult = '';
+      this.bottleRotation = 0;
+      this.showNotification('Debiting wallet…', 'info');
 
-  <style>
-    .fade-enter-active, .fade-leave-active { transition: opacity .4s; }
-    .fade-enter-from, .fade-leave-to { opacity: 0; }
-  </style>
+      // Debit wallet
+      try {
+        const debitPayload = { token:this.token, amount:Number(this.betAmount), reference:'DEBIT'+Date.now(), description:'ShapeSpin Bet' };
+        const res = await fetch('https://favour-amaaavl.xyz/api/fund/sub', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(debitPayload) });
+        const data = await res.json();
+        if (!data.status) return this.showNotification('Debit failed: '+data.message, 'error');
+        if (data.balance) this.balance = Number(data.balance);
+      } catch(err) { this.showNotification('Demo mode: round started', 'info'); }
+
+      // High-speed spin animation
+      const spins = 5 + Math.floor(Math.random()*5);
+      const finalDeg = (Math.random() < 0.5 ? 0 : 180) + 360*spins;
+      let i=0;
+      const spinInterval = setInterval(() => {
+        this.bottleRotation += 30 + Math.random()*20;
+        i++;
+        if(i>spins*12){ clearInterval(spinInterval); this.bottleRotation = finalDeg; this.resolveSpin(); }
+      }, 50);
+    },
+    async resolveSpin() {
+      this.spinResult = (Math.random() < 0.5 ? 'UP':'DOWN');
+      this.roundStarted = false;
+      this.roundOver = true;
+
+      if (this.spinResult === this.playerChoice) {
+        const winAmount = Number(this.betAmount)*2;
+        this.showNotification(`🎉 You won ₦${winAmount.toFixed(2)}!`, 'success');
+
+        // Credit wallet
+        try {
+          const creditPayload = { token:this.token, amount:winAmount, reference:'CREDIT'+Date.now(), description:'ShapeSpin Win' };
+          const res = await fetch('https://favour-amaaavl.xyz/api/fund/add', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(creditPayload) });
+          const data = await res.json();
+          if (data.status && data.balance) this.balance = Number(data.balance);
+        } catch(err) { console.log('Demo credit'); }
+      } else {
+        this.showNotification('You lost this round.', 'error');
+      }
+    },
+    newRound() {
+      this.roundOver = false;
+      this.roundStarted = false;
+      this.spinResult = '';
+      this.playerChoice = '';
+      this.bottleRotation = 0;
+      this.showNotification('Ready for new round — place your bet!', 'info');
+    }
+  }
+}).mount('#app');
+</script>
+
+<style>
+  .fade-enter-active, .fade-leave-active { transition: opacity .4s; }
+  .fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>
 </body>
-  </html>
+</html>
