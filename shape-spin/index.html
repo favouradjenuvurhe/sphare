@@ -1,49 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Shape Spin — Predict UP or DOWN</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Shape Spin — Predict UP or DOWN</title>
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            ssBg: "#0C0A16",
-            ssCard: "#151226",
-            ssBlue: "#4F9EFF",
-            ssRed: "#FF6F61",
-            successGreen: "#28a745",
-            errorRed: "#dc3545",
-            infoBlue: "#0d6efd"
-          },
-          fontFamily: { sans: ["Inter", "system-ui"] }
-        }
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ssBg: "#0C0A16",
+          ssCard: "#151226",
+          ssBlue: "#4F9EFF",
+          ssRed: "#FF6F61",
+          successGreen: "#28a745",
+          errorRed: "#dc3545",
+          infoBlue: "#0d6efd"
+        },
+        fontFamily: { sans: ["Inter", "system-ui"] }
       }
     }
-  </script>
+  }
+</script>
 
-  <!-- Vue 3 -->
-  <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
-  <!-- Lucide -->
-  <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+<!-- Vue 3 -->
+<script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+<!-- Lucide -->
+<script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
 
-  <style>
-    body { background: #0C0A16; color: #fff; font-family: Inter, sans-serif; }
-    .card { background: #151226; border: 1px solid rgba(255,255,255,0.05); }
-    .bottle { width: 100px; height: 100px; background: #FFD700; border-radius:50%; margin:auto; position:relative; transform-origin: 50% 50%; }
-    .bottle::before { content:""; position:absolute; top:20%; left:48%; width:4px; height:60%; background:#000; border-radius:2px; }
-    .spin-animation { transition: transform 2s cubic-bezier(0.33, 1, 0.68, 1); }
-    .arrow { position: absolute; left: 50%; transform: translateX(-50%); font-size: 2rem; }
-    .arrow-up { top: -40px; color: #4F9EFF; }
-    .arrow-down { bottom: -40px; color: #FF6F61; }
-  </style>
+<style>
+body { background: #0C0A16; color: #fff; font-family: Inter, sans-serif; }
+.card { background: #151226; border: 1px solid rgba(255,255,255,0.05); }
+.bottle {
+  width: 60px; height: 150px; margin:auto; position:relative; transform-origin: 50% 75%;
+}
+.bottle-neck {
+  width: 20px; height: 40px; background: #FFD700; border-radius: 10px; position:absolute; top:0; left:50%; transform:translateX(-50%);
+}
+.bottle-body {
+  width: 60px; height: 110px; background: #FFD700; border-radius: 30px 30px 10px 10px; position:absolute; top:40px; left:0;
+  border: 2px solid #E0C200;
+}
+.spin-animation { transition: transform 2s cubic-bezier(0.33, 1, 0.68, 1); }
+
+.arrow {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  font-size: 2rem; z-index: 10;
+}
+.arrow-up { top: -50px; color: #4F9EFF; }
+.arrow-down { bottom: -50px; color: #FF6F61; }
+</style>
 </head>
 <body>
 <div id="app" class="min-h-screen p-6 pb-28 max-w-3xl mx-auto relative">
@@ -53,6 +65,10 @@
     <div>
       <div class="text-2xl font-semibold">Shape Spin</div>
       <div class="text-sm text-gray-400">Predict which direction the bottle will land: UP or DOWN!</div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-sm text-gray-300">Balance</div>
+      <div class="px-3 py-1 rounded-full bg-gray-800 text-white font-semibold">₦<span>{{ displayBalance }}</span></div>
     </div>
   </div>
 
@@ -75,7 +91,10 @@
       <i data-lucide="arrow-down"></i>
     </div>
 
-    <div class="bottle spin-animation" :style="{ transform: 'rotate(' + bottleRotation + 'deg)' }"></div>
+    <div class="bottle spin-animation" :style="{ transform: 'rotate(' + bottleRotation + 'deg)' }">
+      <div class="bottle-neck"></div>
+      <div class="bottle-body"></div>
+    </div>
 
     <div v-if="spinResult !== ''" class="mt-4 text-lg font-bold" :class="spinResult === playerChoice ? 'text-successGreen' : 'text-errorRed'">
       Result: {{ spinResult }}
@@ -205,8 +224,8 @@ createApp({
 </script>
 
 <style>
-  .fade-enter-active, .fade-leave-active { transition: opacity .4s; }
-  .fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active, .fade-leave-active { transition: opacity .4s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
 </body>
 </html>
