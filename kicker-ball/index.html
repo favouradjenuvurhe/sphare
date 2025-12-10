@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Kicker Ball — Cash Out Before Burst</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ssBg: "#0C0A16",
+          ssCard: "#151226",
+          ssBlue: "#4F9EFF",
+          ssRed: "#FF6F61",
+          successGreen: "#28a745",
+          errorRed: "#dc3545",
+          infoBlue: "#0d6efd"
+        },
+        fontFamily: { sans: ["Inter", "system-ui"] }
+      }
+    }
+  }
+</script>
+
+<!-- Vue 3 -->
+<script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+<!-- Lucide -->
+<script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+
+<style>
+body { background: #0C0A16; color: #fff; font-family: Inter, sans-serif; }
+.card { background: #151226; border: 1px solid rgba(255,255,255,0.05); }
+.ball { width: 50px; height: 50px; background: #FFD700; border-radius: 50%; margin:auto; position:relative; }
+.progress { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-top: 10px; overflow:hidden; }
+.progress-bar { height: 100%; background: #4F9EFF; width: 0%; transition: width 0.2s linear; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div id="app" class="min-h-screen p-6 pb-28 max-w-3xl mx-auto relative">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="text-2xl font-semibold">Kicker Ball</div>
+      <div class="text-sm text-gray-400">Cash out before the ball bursts to win!</div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-sm text-gray-300">Balance</div>
+      <div class="px-3 py-1 rounded-full bg-gray-800 text-white font-semibold">₦<span>{{ displayBalance }}</span></div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <transition name="fade">
+    <div v-if="notification.message" :class="['card p-4 rounded-xl mb-6 font-medium', notificationColor]">
+      {{ notification.message }}
+    </div>
+  </transition>
+
+  <!-- Ball + Multiplier -->
+  <div class="card p-6 rounded-2xl shadow-lg mb-6 text-center relative">
+    <div class="ball mb-4" :style="{ transform: 'translateY(' + ballHeight + 'px)' }"></div>
+    <div class="text-xl font-semibold mb-2">Multiplier: <span :class="multiplier > burstMultiplier ? 'text-errorRed' : 'text-successGreen'">{{ multiplier.toFixed(2) }}x</span></div>
+    <div class="progress"><div class="progress-bar" :style="{ width: progressWidth + '%' }"></div></div>
+  </div>
+
+  <!-- Bet & Controls -->
+  <div class="card p-5 rounded-2xl shadow-lg mb-6">
+    <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
+    <input type="number" v-model="betAmount" min="100"
+           class="mt-2 w-full p-3 rounded-xl bg-ssBg border border-gray-700 focus:border-ssBlue outline-none"
+           placeholder="e.g. 500" />
+
+    <div class="flex gap-3 mt-4">
+      <button v-if="!roundStarted && !roundOver" @click="startRound"
+              class="flex-1 py-3 rounded-full bg-ssBlue text-black font-semibold flex items-center justify-center gap-2">
+        Start Kick
+      </button>
+      <button v-if="roundStarted" @click="cashOut"
+              class="flex-1 py-3 rounded-full bg-successGreen text-black font-semibold flex items-center justify-center gap-2">
+        Cash Out
+      </button>
+      <button v-if="roundOver" @click="newRound"
+              class="flex-1 py-3 rounded-full bg-infoBlue text-white font-semibold flex items-center justify-center gap-2">
+        New Round
+      </button>
+    </div>
+
+    <div class="text-xs text-gray-400 mt-3">Min bet: ₦100 • Cash out before burst to multiply your stake</div>
+  </div>
+
+</div>
+
+<script>
+const { createApp } = Vue;
+createApp({
+  data() {
+    return {
+      token: "",
+      betAmount: "",
+      balance: 0.00,
+      roundStarted: false,
+      roundOver: false,
+      multiplier: 1,
+      burstMultiplier: 0,
+      ballHeight: 0,
+      progressWidth: 0,
+      cashOutDone: false,
+      notification: { message: "", type: "info" },
+      interval: null
+    };
+  },
+  computed: {
+    notificationColor() {
+      return this.notification.type === "success" ? "bg-successGreen" : this.notification.type === "error" ? "bg-errorRed" : "bg-infoBlue";
+    },
+    displayBalance() { return Number(this.balance).toFixed(2); }
+  },
+  mounted() {
+    this.token = localStorage.getItem("casino_token") || "DEMO_TOKEN";
+    if (!localStorage.getItem("casino_token")) this.balance = 5000.00;
+  },
+  methods: {
+    showNotification(msg, type='info') {
+      this.notification.message = msg;
+      this.notification.type = type;
+      setTimeout(() => { if (this.notification.message === msg) this.notification.message = ""; }, 4000);
+    },
+    startRound() {
+      if (!this.betAmount || Number(this.betAmount) < 100) return this.showNotification('Enter valid bet (min ₦100)', 'error');
+
+      this.roundStarted = true;
+      this.roundOver = false;
+      this.multiplier = 1;
+      this.ballHeight = 0;
+      this.progressWidth = 0;
+      this.cashOutDone = false;
+
+      // Random burst multiplier (between 1.5x and 10x)
+      this.burstMultiplier = 1.5 + Math.random() * 8.5;
+      this.showNotification('Debiting wallet…', 'info');
+
+      // Debit wallet
+      try {
+        const debitPayload = { token:this.token, amount:Number(this.betAmount), reference:'DEBIT'+Date.now(), description:'KickerBall Bet' };
+        fetch('https://favour-amaaavl.xyz/api/fund/sub', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(debitPayload) })
+          .then(res => res.json()).then(data => { if(data.balance)this.balance = Number(data.balance); });
+      } catch(err) { console.log('Demo debit'); }
+
+      this.interval = setInterval(this.updateMultiplier, 100);
+    },
+    updateMultiplier() {
+      const speed = 0.05 + Math.random()*0.1;
+      this.multiplier += speed;
+      this.ballHeight = -(this.multiplier*10); // ball rises
+      this.progressWidth = Math.min((this.multiplier/this.burstMultiplier)*100, 100);
+
+      if(this.multiplier >= this.burstMultiplier) {
+        clearInterval(this.interval);
+        this.roundStarted = false;
+        this.roundOver = true;
+        if(!this.cashOutDone) this.showNotification('💥 Ball burst! You lost your bet.', 'error');
+      }
+    },
+    cashOut() {
+      if(this.cashOutDone || !this.roundStarted) return;
+      this.cashOutDone = true;
+      clearInterval(this.interval);
+      const winAmount = Number(this.betAmount) * this.multiplier;
+      this.showNotification(`🎉 You cashed out ₦${winAmount.toFixed(2)}!`, 'success');
+      this.roundStarted = false;
+      this.roundOver = true;
+
+      // Credit wallet
+      try {
+        const creditPayload = { token:this.token, amount:winAmount, reference:'CREDIT'+Date.now(), description:'KickerBall Win' };
+        fetch('https://favour-amaaavl.xyz/api/fund/add', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(creditPayload) })
+          .then(res => res.json()).then(data => { if(data.balance)this.balance = Number(data.balance); });
+      } catch(err) { console.log('Demo credit'); }
+    },
+    newRound() {
+      this.roundOver = false;
+      this.roundStarted = false;
+      this.multiplier = 1;
+      this.ballHeight = 0;
+      this.progressWidth = 0;
+      this.cashOutDone = false;
+      this.showNotification('Ready for new round — place your bet!', 'info');
+    }
+  }
+}).mount('#app');
+</script>
+
+<style>
+.fade-enter-active, .fade-leave-active { transition: opacity .4s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>
+</body>
+        </html>
