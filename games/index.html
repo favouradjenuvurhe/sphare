@@ -69,9 +69,10 @@
     <!-- Game Grid -->
     <div class="px-5 mt-5 grid grid-cols-2 gap-4">
 
-      <div
+      <a
         v-for="game in filteredGames"
-        class="bg-casinoCard p-3 rounded-2xl shadow-lg"
+        :href="game.link"
+        class="bg-casinoCard p-3 rounded-2xl shadow-lg block"
       >
         <img :src="game.img" class="w-full h-28 rounded-lg object-cover" />
 
@@ -84,7 +85,7 @@
         >
           <i data-lucide="play-circle"></i> Play Now
         </button>
-      </div>
+      </a>
 
     </div>
 
@@ -120,14 +121,11 @@
           categories: ["All", "Slots", "Dice", "Table", "Cards", "Live Casino"],
 
           games: [
-            { name: "Slots Machine", img: "https://i.imgur.com/6q1zQ7L.jpeg", cat: "Slots" },
-            { name: "Lucky Dice", img: "https://i.imgur.com/RibCQ57.jpeg", cat: "Dice" },
-            { name: "Roulette Spin", img: "https://i.imgur.com/Eo1Tn3Z.jpeg", cat: "Table" },
-            { name: "Blackjack 21", img: "https://i.imgur.com/AKWUp5y.jpeg", cat: "Cards" },
-            { name: "Fortune Wheel", img: "https://i.imgur.com/0zcQbFm.jpeg", cat: "Slots" },
-            { name: "Mega Dice", img: "https://i.imgur.com/RibCQ57.jpeg", cat: "Dice" },
-            { name: "Poker Royale", img: "https://i.imgur.com/AKWUp5y.jpeg", cat: "Cards" },
-            { name: "Baccarat Elite", img: "https://i.imgur.com/Eo1Tn3Z.jpeg", cat: "Table" },
+            { name: "Shape Spin", img: "https://coinsphare.online/img/Screenshot_20251210-115225_1.png", link: "/shape-spin", cat: "Slots" },
+            { name: "Xviator", img: "https://coinsphare.online/img/Screenshot_20251210-102115_1.png", link: "/xviator", cat: "Live Casino" },
+            { name: "Mines", img: "https://coinsphare.online/img/Screenshot_20251210-125338_1.png", link: "/minesweeper", cat: "Table" },
+            { name: "Candy Break", img: "https://coinsphare.online/img/Screenshot_20251210-111456_1.png", link: "/candybreak", cat: "Slots" },
+            { name: "Kicker Ball", img: "https://coinsphare.online/img/Screenshot_20251210-130240_1.png", link: "/kicker-ball", cat: "Dice" }
           ]
         }
       },
@@ -146,4 +144,4 @@
   </script>
 
 </body>
-  </html>
+</html>
