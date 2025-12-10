@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Xviator – Crash Game</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Xviator – Crash Game (Pixel Dino)</title>
 
   <!-- Inter Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Tailwind -->
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -22,97 +21,254 @@
             casinoGlow: "#CFAAFF",
             successGreen: "#28a745",
             errorRed: "#dc3545",
-            infoBlue: "#0d6efd"
+            infoBlue: "#0d6efd",
+            trackGray: "#2a2733"
           },
           fontFamily: { sans: ["Inter", "system-ui"] }
         }
       }
-    };
+    }
   </script>
 
-  <!-- Vue -->
+  <!-- Vue 3 -->
   <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
 
-  <!-- Lucide -->
+  <!-- Lucide icons -->
   <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+
+  <style>
+    body { background: #0c0a16; color: #fff; font-family: Inter, system-ui, sans-serif; }
+    .card { background: #151226; border: 1px solid rgba(255,255,255,0.04); }
+    .track { height: 110px; border-radius: 12px; background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.03); display:flex; align-items:center; padding:14px; position:relative; overflow:hidden;}
+    .track-inner { position:relative; height:36px; background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.012)); border-radius:999px; width:100%; border:1px solid rgba(255,255,255,0.03); overflow:visible; }
+
+    /* Pixel dino frame animation using stacked groups; we switch opacity between frames with a stepped animation */
+    .dino-wrap { position:absolute; bottom:22px; left:8px; width:72px; height:48px; z-index:10; transform-origin:center; pointer-events:none; }
+    .dino-sprite { width:72px; height:48px; display:block; }
+
+    /* frames stacked; default each frame hidden; animation toggles opacity */
+    .dino-frame { opacity:0; transition: opacity .08s linear; }
+    @keyframes dinoRunFrames {
+      0%   { opacity:1; }
+      25%  { opacity:0; }
+      26%  { opacity:1; }
+      50%  { opacity:0; }
+      51%  { opacity:1; }
+      75%  { opacity:0; }
+      76%  { opacity:1; }
+      100% { opacity:0; }
+    }
+    /* We'll use animation with steps to show frames in sequence */
+    .dino-running .dino-frame { animation: dinoRunStepper 0.48s steps(4) infinite; }
+    @keyframes dinoRunStepper {
+      0% { opacity:1; }
+      25% { opacity:0; }
+      50% { opacity:0; }
+      75% { opacity:0; }
+      100% { opacity:0; }
+    }
+    /* But to get stepped frame swap we will manually toggle opacity per nth-child with animation-delay */
+    .dino-running .dino-frame:nth-child(1) { animation: dinoFrameOn 0.48s steps(1) infinite 0s; }
+    .dino-running .dino-frame:nth-child(2) { animation: dinoFrameOn 0.48s steps(1) infinite 0.12s; }
+    .dino-running .dino-frame:nth-child(3) { animation: dinoFrameOn 0.48s steps(1) infinite 0.24s; }
+    .dino-running .dino-frame:nth-child(4) { animation: dinoFrameOn 0.48s steps(1) infinite 0.36s; }
+
+    @keyframes dinoFrameOn {
+      0% { opacity: 1; }
+      24.9% { opacity: 1; }
+      25% { opacity: 0; }
+      100% { opacity: 0; }
+    }
+
+    /* Jump on cashout */
+    .dino-jump { animation: dinoJump 600ms ease-out forwards; }
+    @keyframes dinoJump {
+      0% { transform: translateY(0) scale(1); }
+      40% { transform: translateY(-58px) scale(1.06) rotate(-6deg); }
+      70% { transform: translateY(-28px) scale(1.02) rotate(2deg); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    /* Celebrate bounce */
+    .dino-celebrate { animation: dinoCelebrate 900ms ease-in-out; transform-origin:center bottom; }
+    @keyframes dinoCelebrate {
+      0% { transform: translateY(0) scale(1); }
+      30% { transform: translateY(-18px) scale(1.05) rotate(-6deg); }
+      60% { transform: translateY(-8px) scale(1.03) rotate(6deg); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    /* Crash fall */
+    .dino-crash { animation: dinoFall 900ms forwards; transform-origin:center bottom; }
+    @keyframes dinoFall {
+      0% { transform: translateY(0) rotate(0) scale(1); opacity:1; }
+      40% { transform: translateY(20px) rotate(20deg) scale(0.98); }
+      100% { transform: translateY(120px) rotate(85deg) scale(0.9); opacity:0.9; }
+    }
+
+    /* multiplier size (responsive tweaks) */
+    .multiplier-value { font-weight: 800; letter-spacing: -0.02em; }
+    .progress { position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg, rgba(165,107,255,0.12), rgba(207,170,255,0.04)); border-radius:12px; z-index:1; transition: width 0.08s linear; }
+
+    @media (max-width:480px) {
+      .dino-wrap { width:56px; height:36px; left:6px; bottom:18px; }
+      .track { height:92px; padding:10px; }
+      .multiplier-value { font-size:2.2rem; }
+    }
+  </style>
 </head>
-
-<body class="bg-casinoDark text-white font-sans antialiased">
-  <div id="app" class="min-h-screen p-6 pb-24">
-
+<body class="bg-casinoDark text-white antialiased">
+  <div id="app" class="min-h-screen p-6 pb-28">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <div class="text-lg font-semibold">Xviator</div>
+        <div class="text-2xl font-semibold">Xviator</div>
         <div class="text-sm text-gray-400">Crash before it crashes!</div>
       </div>
-      <span class="p-2 rounded-full bg-casinoCard shadow">
-        <i data-lucide="trending-up" class="text-gray-300"></i>
-      </span>
-    </div>
-
-    <!-- Bet Input -->
-    <div class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6">
-      <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
-      <input type="number" v-model="betAmount"
-        class="mt-2 w-full p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
-        placeholder="e.g. 1000" />
-
-      <button v-if="!roundStarted" @click="startGame"
-        class="w-full mt-5 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
-        <i data-lucide="play"></i> Start Round
-      </button>
-
-      <button v-if="roundStarted && !cashedOut && !crashed" @click="cashOut"
-        class="w-full mt-5 py-3 rounded-full bg-successGreen text-white font-semibold flex items-center justify-center gap-2">
-        <i data-lucide="dollar-sign"></i> Cash Out
-      </button>
-
-      <button v-if="crashed" @click="resetGame"
-        class="w-full mt-5 py-3 rounded-full bg-infoBlue text-white font-semibold flex items-center justify-center gap-2">
-        <i data-lucide="rotate-ccw"></i> New Round
-      </button>
-    </div>
-
-    <!-- Multiplier Display -->
-    <div class="bg-casinoCard p-5 rounded-2xl shadow-lg mb-6 text-center">
-      <div class="text-6xl font-bold" :class="crashed ? 'text-errorRed' : 'text-casinoPurple'">
-        {{ multiplier.toFixed(2) }}x
+      <div class="flex items-center gap-3">
+        <div class="text-sm text-gray-300">Balance</div>
+        <div class="px-3 py-1 rounded-full bg-gray-800 text-white font-semibold">₦<span>{{ displayBalance }}</span></div>
       </div>
-      <div v-if="crashed" class="text-errorRed font-semibold mt-3 text-lg">CRASHED</div>
-      <div v-if="cashedOut" class="text-successGreen font-semibold mt-3 text-lg">CASHED OUT!</div>
     </div>
 
-    <!-- Notification -->
+    <!-- MULTIPLIER DISPLAY (FIRST) -->
+    <div class="card p-5 rounded-2xl shadow-lg mb-6 relative overflow-visible">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <div class="text-xs text-gray-400">Multiplier</div>
+          <div class="text-6xl multiplier-value" :class="crashed ? 'text-errorRed' : (cashedOut ? 'text-successGreen' : 'text-casinoPurple')">
+            {{ multiplier.toFixed(2) }}x
+          </div>
+        </div>
+
+        <div class="text-right">
+          <div class="text-xs text-gray-400">Round</div>
+          <div class="text-lg font-semibold">{{ roundLabel }}</div>
+          <div class="text-xs text-gray-400 mt-1">Crash point: <span v-if="roundOver">{{ crashPoint.toFixed(2) }}x</span><span v-else>—</span></div>
+        </div>
+      </div>
+
+      <!-- Track -->
+      <div class="track mt-4">
+        <div class="progress" :style="{ width: progressPercent + '%' }" v-if="roundStarted || cashedOut || crashed"></div>
+        <div class="track-inner relative">
+          <!-- Dino wrapper -->
+          <div class="dino-wrap"
+               :class="dinoWrapperClass"
+               :style="dinoStyle"
+               @animationend="onDinoAnimationEnd">
+            <!-- inline SVG with 4 pixel-ish frames stacked -->
+            <svg class="dino-sprite" viewBox="0 0 72 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- frame 1 -->
+              <g class="dino-frame" transform="translate(0,0)">
+                <rect x="4" y="28" width="40" height="12" fill="#CDEB8B" rx="2"></rect>
+                <rect x="36" y="22" width="18" height="8" fill="#CDEB8B" rx="2"></rect>
+                <rect x="44" y="18" width="6" height="6" fill="#CDEB8B" rx="1"></rect>
+                <rect x="12" y="22" width="6" height="6" fill="#CDEB8B" rx="1"></rect>
+                <rect x="10" y="30" width="4" height="4" fill="#244"></rect>
+              </g>
+              <!-- frame 2 (slightly different legs) -->
+              <g class="dino-frame" transform="translate(0,0)">
+                <rect x="4" y="28" width="40" height="12" fill="#CDEB8B" rx="2"></rect>
+                <rect x="36" y="22" width="18" height="8" fill="#CDEB8B" rx="2"></rect>
+                <rect x="44" y="18" width="6" height="6" fill="#CDEB8B" rx="1"></rect>
+                <rect x="12" y="24" width="6" height="6" fill="#CDEB8B" rx="1"></rect>
+                <rect x="10" y="30" width="4" height="4" fill="#244"></rect>
+              </g>
+              <!-- frame 3 (tail lift) -->
+              <g class="dino-frame" transform="translate(0,0)">
+                <rect x="6" y="26" width="40" height="12" fill="#CDEB8B" rx="2"></rect>
+                <rect x="38" y="20" width="16" height="8" fill="#CDEB8B" rx="2"></rect>
+                <rect x="46" y="16" width="6" height="6" fill="#CDEB8B" rx="1"></rect>
+                <rect x="14" y="22" width="6" height="6" fill="#CDEB8B" rx="1"></rect>
+                <rect x="12" y="30" width="4" height="4" fill="#244"></rect>
+              </g>
+              <!-- frame 4 (mid-run) -->
+              <g class="dino-frame" transform="translate(0,0)">
+                <rect x="4" y="28" width="38" height="12" fill="#CDEB8B" rx="2"></rect>
+                <rect x="36" y="20" width="18" height="8" fill="#CDEB8B" rx="2"></rect>
+                <rect x="44" y="18" width="6" height="6" fill="#CDEB8B" rx="1"></rect>
+                <rect x="12" y="22" width="6" height="6" fill="#CDEB8B" rx="1"></rect>
+                <rect x="10" y="30" width="4" height="4" fill="#244"></rect>
+              </g>
+            </svg>
+          </div>
+
+          <!-- crash marker -->
+          <div v-if="roundStarted || roundOver" :style="{ left: crashMarkerPos + '%' }"
+               class="absolute top-2 bottom-2 w-0.5 bg-red-500 opacity-70 z-5 pointer-events-none"></div>
+        </div>
+      </div>
+
+      <!-- mini info row -->
+      <div class="flex items-center justify-between mt-4 text-sm text-gray-300">
+        <div>Bet: <span class="font-semibold">₦{{ Number(betAmount || 0).toFixed(2) }}</span></div>
+        <div v-if="cashedOut" class="text-successGreen font-semibold">CASHED OUT</div>
+        <div v-else-if="crashed" class="text-errorRed font-semibold">CRASHED</div>
+        <div v-else class="text-gray-400">Status: <span class="font-medium">{{ roundStatusText }}</span></div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION (SECOND) -->
     <transition name="fade">
-      <div v-if="notification.message"
-        :class="['mt-4 p-4 rounded-lg text-white font-medium', notificationColor]">
+      <div v-if="notification.message" :class="['card p-4 rounded-xl mb-6 font-medium', notificationColor]">
         {{ notification.message }}
       </div>
     </transition>
 
+    <!-- BET INPUT (THIRD) -->
+    <div class="card p-5 rounded-2xl shadow-lg mb-6">
+      <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
+      <input type="number" v-model="betAmount"
+             class="mt-2 w-full p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
+             placeholder="e.g. 1000" />
+
+      <div class="flex gap-3 mt-4">
+        <button v-if="!roundStarted && !cashedOut && !crashed" @click="startGame"
+          class="flex-1 py-3 rounded-full bg-casinoPurple text-white font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="play"></i> Start Round
+        </button>
+
+        <button v-if="roundStarted && !cashedOut && !crashed" @click="cashOut"
+          class="flex-1 py-3 rounded-full bg-successGreen text-white font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="dollar-sign"></i> Cash Out
+        </button>
+
+        <button v-if="(cashedOut || crashed)" @click="startNewRound"
+          class="flex-1 py-3 rounded-full bg-infoBlue text-white font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="rotate-ccw"></i> Start New Round
+        </button>
+      </div>
+
+      <div class="text-xs text-gray-400 mt-3">Min bet: ₦100 • Wallet debited when round starts. Cash out before crash to win.</div>
+    </div>
+
+    <!-- Bottom navigation -->
+    <div class="fixed bottom-0 left-0 right-0 px-4 pb-4">
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-casinoCard border border-gray-800 rounded-2xl p-3 flex justify-around">
+          <a href="/" class="flex flex-col items-center">
+            <i data-lucide="home" class="text-gray-400"></i>
+            <span class="text-xs text-gray-400 mt-1">Home</span>
+          </a>
+          <a href="/games" class="flex flex-col items-center">
+            <i data-lucide="gamepad-2" class="text-gray-400"></i>
+            <span class="text-xs text-gray-400 mt-1">Games</span>
+          </a>
+          <a href="/deposit" class="flex flex-col items-center">
+            <i data-lucide="arrow-big-up" class="text-casinoPurple"></i>
+            <span class="text-xs text-casinoPurple mt-1">Deposit</span>
+          </a>
+          <a href="/profile" class="flex flex-col items-center">
+            <i data-lucide="user" class="text-gray-400"></i>
+            <span class="text-xs text-gray-400 mt-1">Profile</span>
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Bottom Navigation -->
-  <div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
-    <a href="/" class="flex flex-col items-center">
-      <i data-lucide="home" class="text-gray-400"></i>
-      <span class="text-xs text-gray-400 mt-1">Home</span>
-    </a>
-    <a href="/games" class="flex flex-col items-center">
-      <i data-lucide="gamepad-2" class="text-gray-400"></i>
-      <span class="text-xs text-gray-400 mt-1">Games</span>
-    </a>
-    <a href="/deposit" class="flex flex-col items-center">
-      <i data-lucide="arrow-big-up" class="text-casinoPurple"></i>
-      <span class="text-xs text-casinoPurple mt-1">Deposit</span>
-    </a>
-    <a href="/profile" class="flex flex-col items-center">
-      <i data-lucide="user" class="text-gray-400"></i>
-      <span class="text-xs text-gray-400 mt-1">Profile</span>
-    </a>
-  </div>
-
+  <!-- APP SCRIPT -->
   <script>
     const { createApp } = Vue;
 
@@ -125,9 +281,12 @@
           roundStarted: false,
           crashed: false,
           cashedOut: false,
-          crashPoint: 1,
+          roundOver: false,
+          crashPoint: 1.0,
           notification: { message: "", type: "info" },
           interval: null,
+          balance: 0.00,
+          dinoAnimState: 'idle' // 'idle'|'running'|'jump'|'celebrate'|'crash'
         };
       },
 
@@ -138,24 +297,73 @@
             : this.notification.type === "error"
               ? "bg-errorRed"
               : "bg-infoBlue";
+        },
+        displayBalance() {
+          return Number(this.balance).toFixed(2);
+        },
+        progressPercent() {
+          if (!this.roundStarted && !this.cashedOut && !this.crashed) return 0;
+          const p = (this.multiplier / Math.max(this.crashPoint, 1)) * 100;
+          return Math.min(100, Math.max(0, p));
+        },
+        crashMarkerPos() {
+          const ratio = Math.min(this.crashPoint / 25, 1);
+          return Math.min(98, Math.max(2, ratio * 98));
+        },
+        dinoStyle() {
+          const pct = this.progressPercent;
+          // move along track; small offset so it stays inside
+          return {
+            transform: `translateX(${pct * 0.92}%)`
+          };
+        },
+        dinoWrapperClass() {
+          if (this.crashed) return 'dino-wrap dino-crash';
+          if (this.cashedOut && this.roundOver) return 'dino-wrap dino-jump dino-celebrate';
+          if (this.roundStarted) return 'dino-wrap dino-running';
+          return 'dino-wrap';
+        },
+        roundLabel() {
+          if (this.roundStarted) return 'In Progress';
+          if (this.cashedOut) return 'Cashed';
+          if (this.crashed) return 'Crashed';
+          return 'Idle';
+        },
+        roundStatusText() {
+          if (this.roundStarted) return 'Rising';
+          if (this.cashedOut) return 'Cashed Out';
+          if (this.crashed) return 'Crashed';
+          return 'Waiting';
         }
       },
 
       mounted() {
-        setTimeout(() => lucide.createIcons(), 100);
-        this.token = localStorage.getItem("casino_token");
-        if (!this.token) {
-          alert("Login required");
-          window.location.href = "/login";
+        setTimeout(() => lucide.createIcons(), 120);
+        // load token if available (your environment)
+        this.token = localStorage.getItem("casino_token") || "DEMO_TOKEN";
+        if (!localStorage.getItem("casino_token")) {
+          this.showNotification("No login token found — running in demo mode.", "info");
+          this.balance = 10000.00; // demo balance
         }
       },
 
       methods: {
-        /** Start the crash game */
+        showNotification(message, type="info") {
+          this.notification.message = message;
+          this.notification.type = type;
+          setTimeout(() => { if (this.notification.message === message) this.notification.message = ""; }, 5000);
+        },
+
         async startGame() {
-          if (!this.betAmount || this.betAmount < 100) {
+          if (!this.betAmount || Number(this.betAmount) < 100) {
             return this.showNotification("Enter a valid bet amount (min ₦100)", "error");
           }
+
+          // Reset flags
+          this.multiplier = 1.00;
+          this.cashedOut = false;
+          this.crashed = false;
+          this.roundOver = false;
 
           // Debit wallet
           const debitPayload = {
@@ -167,35 +375,45 @@
 
           this.showNotification("Debiting wallet…", "info");
 
-          const debitRes = await fetch("https://favour-amaaavl.xyz/api/fund/sub", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(debitPayload)
-          });
-
-          const debitData = await debitRes.json();
-          if (!debitData.status) {
-            return this.showNotification("Debit failed: " + debitData.message, "error");
+          try {
+            const res = await fetch("https://favour-amaaavl.xyz/api/fund/sub", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(debitPayload)
+            });
+            const data = await res.json();
+            if (!data.status) {
+              return this.showNotification("Debit failed: " + (data.message || "Unknown"), "error");
+            }
+            if (data.balance) this.balance = Number(data.balance);
+          } catch (err) {
+            // Allow demo mode to continue
+            this.showNotification("Debit request failed (network/demo) — continuing in demo mode.", "info");
           }
 
-          // Start round
+          // compute crash point (heavy-tail with many small crashes)
+          if (Math.random() < 0.6) {
+            this.crashPoint = +(1 + Math.random() * 4).toFixed(2); // 1.00–5.00 common
+          } else {
+            // rarer bigger multipliers
+            const r = Math.random();
+            const v = Math.min(120, Math.max(1.05, Math.floor((1 / (1 - r)) * 100) / 100));
+            this.crashPoint = v;
+          }
+
           this.roundStarted = true;
-          this.cashedOut = false;
-          this.crashed = false;
-          this.multiplier = 1.00;
-
-          // Determine crash point (Aviator formula style)
-          this.crashPoint = (Math.random() * 20 + 1).toFixed(2);
-
+          this.dinoAnimState = 'running';
+          this.showNotification("Round started — good luck!", "info");
           this.runMultiplier();
         },
 
-        /** Multiplier increases until crash */
         runMultiplier() {
+          if (this.interval) clearInterval(this.interval);
           this.interval = setInterval(() => {
             if (this.cashedOut) return;
-
-            this.multiplier += 0.03 + this.multiplier * 0.015;
+            // growth formula similar to Aviator
+            this.multiplier += 0.02 + (this.multiplier * 0.0125);
+            if (!isFinite(this.multiplier) || this.multiplier > 1000) this.multiplier = 1000;
 
             if (this.multiplier >= this.crashPoint) {
               this.triggerCrash();
@@ -203,21 +421,12 @@
           }, 80);
         },
 
-        /** Crash event */
-        triggerCrash() {
-          clearInterval(this.interval);
-          this.crashed = true;
-          this.roundStarted = false;
-          this.showNotification("Round crashed at " + this.multiplier.toFixed(2) + "x", "error");
-        },
-
-        /** Cash out before crash */
         async cashOut() {
+          if (!this.roundStarted || this.cashedOut || this.crashed) return;
           this.cashedOut = true;
-          clearInterval(this.interval);
+          if (this.interval) clearInterval(this.interval);
 
-          const winAmount = Number(this.betAmount) * this.multiplier;
-
+          const winAmount = Number(this.betAmount) * Number(this.multiplier);
           const creditPayload = {
             token: this.token,
             amount: winAmount,
@@ -225,50 +434,66 @@
             description: `Xviator Cashout ${this.multiplier.toFixed(2)}x`
           };
 
-          const creditRes = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(creditPayload)
-          });
+          this.showNotification("Processing cashout…", "info");
 
-          const creditData = await creditRes.json();
-
-          if (creditData.status) {
-            this.showNotification(`🎉 You won ₦${winAmount.toFixed(2)}!`, "success");
-          } else {
-            this.showNotification("Credit failed: " + creditData.message, "error");
+          try {
+            const res = await fetch("https://favour-amaaavl.xyz/api/fund/add", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(creditPayload)
+            });
+            const data = await res.json();
+            if (data.status) {
+              if (data.balance) this.balance = Number(data.balance);
+              this.showNotification(`🎉 You won ₦${winAmount.toFixed(2)}!`, "success");
+            } else {
+              this.showNotification("Credit failed: " + (data.message || "Unknown"), "error");
+            }
+          } catch (err) {
+            this.showNotification("Credit request failed (network/demo): " + err.message, "error");
+          } finally {
+            this.roundStarted = false;
+            this.roundOver = true;
+            // trigger jump + celebrate animation
+            this.dinoAnimState = 'jump';
+            // after jump completes, show celebrate
+            setTimeout(() => { this.dinoAnimState = 'celebrate'; }, 650);
           }
         },
 
-        /** Reset UI for next round */
-        resetGame() {
-          this.multiplier = 1.00;
-          this.crashed = false;
-          this.cashedOut = false;
+        triggerCrash() {
+          if (this.interval) clearInterval(this.interval);
+          this.crashed = true;
           this.roundStarted = false;
+          this.roundOver = true;
+          // set multiplier exactly to crashPoint
+          this.multiplier = Number(this.crashPoint);
+          this.showNotification("Round crashed at " + this.multiplier.toFixed(2) + "x", "error");
+          // dino fall animation
+          this.dinoAnimState = 'crash';
         },
 
-        /** Notification system */
-        showNotification(message, type) {
-          this.notification.message = message;
-          this.notification.type = type;
-          setTimeout(() => (this.notification.message = ""), 4000);
+        startNewRound() {
+          this.multiplier = 1.00;
+          this.cashedOut = false;
+          this.crashed = false;
+          this.roundStarted = false;
+          this.roundOver = false;
+          this.crashPoint = 1.0;
+          this.dinoAnimState = 'idle';
+          this.showNotification("Ready. Enter bet and start a round.", "info");
+        },
+
+        onDinoAnimationEnd(e) {
+          // allow animation end handling if needed (not strictly required)
         }
       }
-    }).mount("#app");
+    }).mount('#app');
   </script>
 
   <style>
-    .fade-enter-active,
-    .fade-leave-active {
-      transition: opacity 0.5s;
-    }
-
-    .fade-enter-from,
-    .fade-leave-to {
-      opacity: 0;
-    }
+    .fade-enter-active, .fade-leave-active { transition: opacity .4s; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
   </style>
 </body>
-
-  </html>
+</html>
