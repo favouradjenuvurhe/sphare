@@ -38,8 +38,8 @@
 body { background: #0C0A16; color: #fff; font-family: Inter, sans-serif; }
 .card { background: #151226; border: 1px solid rgba(255,255,255,0.05); }
 .ball { width: 50px; height: 50px; background: #FFD700; border-radius: 50%; margin:auto; position:relative; }
-.progress { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-top: 10px; overflow:hidden; }
-.progress-bar { height: 100%; background: #4F9EFF; width: 0%; transition: width 0.2s linear; }
+.chart-container { width: 100%; height: 150px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; position: relative; margin-top: 10px; }
+.chart-line { position: absolute; bottom: 0; left: 0; height: 100%; width: 2px; background: #4F9EFF; transition: height 0.1s linear; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
@@ -65,11 +65,15 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     </div>
   </transition>
 
-  <!-- Ball + Multiplier -->
+  <!-- Ball + Multiplier Graph -->
   <div class="card p-6 rounded-2xl shadow-lg mb-6 text-center relative">
     <div class="ball mb-4" :style="{ transform: 'translateY(' + ballHeight + 'px)' }"></div>
-    <div class="text-xl font-semibold mb-2">Multiplier: <span :class="multiplier > burstMultiplier ? 'text-errorRed' : 'text-successGreen'">{{ multiplier.toFixed(2) }}x</span></div>
-    <div class="progress"><div class="progress-bar" :style="{ width: progressWidth + '%' }"></div></div>
+    <div class="text-xl font-semibold mb-2">Multiplier: <span :class="multiplier >= burstMultiplier ? 'text-errorRed' : 'text-successGreen'">{{ multiplier.toFixed(2) }}x</span></div>
+
+    <!-- Multiplier Graph -->
+    <div class="chart-container">
+      <div v-for="(point, index) in graphData" :key="index" class="chart-line" :style="{ left: index*4 + 'px', height: point*100 + '%' }"></div>
+    </div>
   </div>
 
   <!-- Bet & Controls -->
@@ -94,7 +98,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
       </button>
     </div>
 
-    <div class="text-xs text-gray-400 mt-3">Min bet: ₦100 • Cash out before burst to multiply your stake</div>
+    <div class="text-xs text-gray-400 mt-3">Min bet: ₦100 • Cash out before burst • Winning chance 25%</div>
   </div>
 
 </div>
@@ -112,10 +116,10 @@ createApp({
       multiplier: 1,
       burstMultiplier: 0,
       ballHeight: 0,
-      progressWidth: 0,
       cashOutDone: false,
       notification: { message: "", type: "info" },
-      interval: null
+      interval: null,
+      graphData: []
     };
   },
   computed: {
@@ -141,11 +145,16 @@ createApp({
       this.roundOver = false;
       this.multiplier = 1;
       this.ballHeight = 0;
-      this.progressWidth = 0;
       this.cashOutDone = false;
+      this.graphData = [];
 
-      // Random burst multiplier (between 1.5x and 10x)
-      this.burstMultiplier = 1.5 + Math.random() * 8.5;
+      // 25% chance to have a high multiplier (winning)
+      if(Math.random() < 0.25){
+        this.burstMultiplier = 3 + Math.random()*5; // possible win
+      } else {
+        this.burstMultiplier = 1.2 + Math.random()*1.3; // likely burst early
+      }
+
       this.showNotification('Debiting wallet…', 'info');
 
       // Debit wallet
@@ -161,7 +170,10 @@ createApp({
       const speed = 0.05 + Math.random()*0.1;
       this.multiplier += speed;
       this.ballHeight = -(this.multiplier*10); // ball rises
-      this.progressWidth = Math.min((this.multiplier/this.burstMultiplier)*100, 100);
+
+      // update graph
+      if(this.graphData.length >= 80) this.graphData.shift(); // max points
+      this.graphData.push(Math.min(this.multiplier/this.burstMultiplier,1));
 
       if(this.multiplier >= this.burstMultiplier) {
         clearInterval(this.interval);
@@ -191,8 +203,8 @@ createApp({
       this.roundStarted = false;
       this.multiplier = 1;
       this.ballHeight = 0;
-      this.progressWidth = 0;
       this.cashOutDone = false;
+      this.graphData = [];
       this.showNotification('Ready for new round — place your bet!', 'info');
     }
   }
@@ -204,4 +216,4 @@ createApp({
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
 </body>
-        </html>
+</html>
