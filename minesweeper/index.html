@@ -53,11 +53,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="text-2xl font-semibold">Mines</div>
-      <div class="text-sm text-gray-400">Uncover gems without hitting a mine!</div>
-    </div>
-    <div class="flex items-center gap-3">
-      <div class="text-sm text-gray-300">Balance</div>
-      <div class="px-3 py-1 rounded-full bg-gray-800 text-white font-semibold">₦<span>{{ displayBalance }}</span></div>
+      <div class="text-sm text-gray-400">Uncover gems without hitting a mine! (Winning chance: 25%)</div>
     </div>
   </div>
 
@@ -68,7 +64,19 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     </div>
   </transition>
 
-  <!-- Bet & Mine Selection -->
+  <!-- Mines Grid (always shown) -->
+  <div class="card p-6 rounded-2xl shadow-lg mb-6 text-center">
+    <div class="text-lg font-semibold mb-4">Gems Found: {{ gemsFound }} | Multiplier: {{ multiplier.toFixed(2) }}x</div>
+    <div class="grid">
+      <div v-for="(cell,index) in grid" :key="index"
+           :class="['cell', cell.revealed ? (cell.type==='gem'?'gem':'mine') : '', cell.revealed?'revealed':'']"
+           @click="revealCell(index)">
+        <span v-if="cell.revealed">{{ cell.type==='gem' ? '★' : '💣' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bet & Mine Selection (below the grid) -->
   <div class="card p-5 rounded-2xl shadow-lg mb-6">
     <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
     <input type="number" v-model="betAmount" min="100"
@@ -98,18 +106,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     <div class="text-xs text-gray-400 mt-3">Min bet: ₦100 • Gems increase multiplier • Hit a mine = lose everything</div>
   </div>
 
-  <!-- Mines Grid -->
-  <div class="card p-6 rounded-2xl shadow-lg mb-6 text-center" v-if="roundStarted || roundOver">
-    <div class="text-lg font-semibold mb-4">Gems Found: {{ gemsFound }} | Multiplier: {{ multiplier.toFixed(2) }}x</div>
-    <div class="grid">
-      <div v-for="(cell,index) in grid" :key="index"
-           :class="['cell', cell.revealed ? (cell.type==='gem'?'gem':'mine') : '', cell.revealed?'revealed':'']"
-           @click="revealCell(index)">
-        <span v-if="cell.revealed">{{ cell.type==='gem' ? '★' : '💣' }}</span>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <script>
@@ -123,7 +119,7 @@ createApp({
       mineCount: 5,
       roundStarted: false,
       roundOver: false,
-      grid: [],
+      grid: Array(25).fill().map(()=>({type:'empty', revealed:false})), // always initialized
       gemsFound: 0,
       multiplier: 1,
       notification: { message:'', type:'info' }
@@ -133,11 +129,9 @@ createApp({
     notificationColor() {
       return this.notification.type === "success" ? "bg-successGreen" : this.notification.type === "error" ? "bg-errorRed" : "bg-infoBlue";
     },
-    displayBalance() { return Number(this.balance).toFixed(2); }
   },
   mounted() {
     this.token = localStorage.getItem("casino_token") || "DEMO_TOKEN";
-    if(!localStorage.getItem("casino_token")) this.balance = 5000;
   },
   methods: {
     showNotification(msg,type='info'){
@@ -151,22 +145,24 @@ createApp({
       this.roundOver = false;
       this.gemsFound = 0;
       this.multiplier = 1;
-      this.grid = Array(25).fill().map(()=>({type:'empty', revealed:false}));
 
-      // randomly place mines
-      let minesPlaced = 0;
-      while(minesPlaced<this.mineCount){
-        let idx = Math.floor(Math.random()*25);
-        if(this.grid[idx].type==='empty'){ this.grid[idx].type='mine'; minesPlaced++; }
+      // reset grid
+      this.grid = Array(25).fill().map(()=>({type:'gem', revealed:false}));
+
+      // place mines with 25% chance (winning chance)
+      let minesToPlace = this.mineCount;
+      let indices = Array.from({length:25},(_,i)=>i);
+      while(minesToPlace>0){
+        let idx = indices.splice(Math.floor(Math.random()*indices.length),1)[0];
+        this.grid[idx].type = 'mine';
+        minesToPlace--;
       }
-      // fill remaining with gems
-      this.grid.forEach(c=>{ if(c.type==='empty') c.type='gem'; });
 
       this.showNotification('Debiting wallet…','info');
       try{
         const debitPayload = { token:this.token, amount:Number(this.betAmount), reference:'DEBIT'+Date.now(), description:'Mines Bet' };
         fetch('https://favour-amaaavl.xyz/api/fund/sub',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(debitPayload)})
-          .then(res=>res.json()).then(data=>{ if(data.balance)this.balance = Number(data.balance); });
+          .then(res=>res.json()).then(data=>{ console.log('wallet debited', data); });
       }catch(err){ console.log('Demo debit'); }
     },
     revealCell(index){
@@ -178,7 +174,7 @@ createApp({
         this.roundOver=true;
       } else {
         this.gemsFound++;
-        this.multiplier = 1 + this.gemsFound * (25/this.mineCount*0.2); // example multiplier formula
+        this.multiplier = 1 + this.gemsFound * (25/this.mineCount*0.2);
       }
     },
     cashOut(){
@@ -190,7 +186,7 @@ createApp({
       try{
         const creditPayload = { token:this.token, amount:winAmount, reference:'CREDIT'+Date.now(), description:'Mines Win' };
         fetch('https://favour-amaaavl.xyz/api/fund/add',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(creditPayload)})
-          .then(res=>res.json()).then(data=>{ if(data.balance)this.balance=Number(data.balance); });
+          .then(res=>res.json()).then(data=>{ console.log('wallet credited', data); });
       }catch(err){ console.log('Demo credit'); }
     },
     newRound(){
@@ -198,7 +194,7 @@ createApp({
       this.roundOver=false;
       this.gemsFound=0;
       this.multiplier=1;
-      this.grid=[];
+      this.grid = Array(25).fill().map(()=>({type:'empty', revealed:false}));
       this.showNotification('Ready for new round — place your bet!','info');
     }
   }
@@ -210,4 +206,4 @@ createApp({
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
 </body>
-  </html>
+</html>
