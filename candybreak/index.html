@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>CandyBreak — Crash & Break</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cbBg: "#0F1020",
+            cbCard: "#181625",
+            cbPink: "#FF6FB5",
+            cbMint: "#7EF0D3",
+            cbCandyYellow: "#FFD36E",
+            successGreen: "#28a745",
+            errorRed: "#dc3545",
+            infoBlue: "#0d6efd"
+          },
+          fontFamily: { sans: ["Inter", "system-ui"] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+  <!-- Lucide icons -->
+  <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+
+  <style>
+    body { background: #0F1020; color: #fff; font-family: Inter, system-ui, sans-serif; }
+    .card { background: #181625; border: 1px solid rgba(255,255,255,0.03); }
+    .candy { width: 46px; height: 46px; border-radius: 10px; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; }
+    .candy-pop { transform: scale(1.12); transition: transform .12s ease; }
+    .candy-squish { transform: scale(0.9); transition: transform .12s ease; }
+
+    /* small drop shadow for candy */
+    .candy { box-shadow: 0 6px 18px rgba(0,0,0,0.45); }
+
+    /* rotten candy animation (blink) */
+    .rotten { animation: rottenBlink 900ms ease-in-out infinite; }
+    @keyframes rottenBlink {
+      0% { filter: hue-rotate(0) saturate(1); }
+      50% { filter: hue-rotate(-20deg) saturate(.6) brightness(.9); }
+      100% { filter: hue-rotate(0) saturate(1); }
+    }
+
+    /* multiplier glow */
+    .mult-glow { text-shadow: 0 12px 36px rgba(255,111,181,0.08); }
+
+    /* progress bar */
+    .progress-bar { height: 8px; border-radius:999px; overflow:hidden; background: rgba(255,255,255,0.02); }
+    .progress-fill { height:100%; background: linear-gradient(90deg, rgba(255,111,181,0.18), rgba(126,240,211,0.08)); transition: width .08s linear; }
+
+    /* mobile tweaks */
+    @media (max-width:480px) {
+      .candy { width: 40px; height:40px; border-radius:8px; }
+      .mult-value { font-size: 2.6rem; }
+    }
+  </style>
+</head>
+<body class="bg-cbBg">
+  <div id="app" class="min-h-screen p-6 pb-28 max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <div class="text-2xl font-semibold">CandyBreak</div>
+        <div class="text-sm text-gray-400">Break candies — cash out before the rotten one hits!</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="text-sm text-gray-300">Balance</div>
+        <div class="px-3 py-1 rounded-full bg-gray-800 text-white font-semibold">₦<span>{{ displayBalance }}</span></div>
+      </div>
+    </div>
+
+    <!-- MULTIPLIER DISPLAY — FIRST -->
+    <div class="card p-5 rounded-2xl shadow-lg mb-6 relative overflow-visible">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-xs text-gray-400">Multiplier</div>
+          <div class="text-5xl font-extrabold mult-value mult-glow" :class="crashed ? 'text-errorRed' : (cashedOut ? 'text-successGreen' : 'text-cbPink')">
+            {{ multiplier.toFixed(2) }}x
+          </div>
+          <div class="text-xs text-gray-400 mt-1">Round: <span class="font-semibold">{{ roundLabel }}</span></div>
+        </div>
+
+        <div class="text-right">
+          <div class="text-xs text-gray-400">Crash point:</div>
+          <div class="text-lg font-medium">{{ roundOver ? crashPoint.toFixed(2) + 'x' : '—' }}</div>
+          <div class="mt-2 w-48 progress-bar">
+            <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candy arcade area -->
+      <div class="mt-5 grid grid-cols-7 gap-2">
+        <template v-for="(cell, idx) in grid" :key="idx">
+          <div class="candy-wrapper flex items-center justify-center">
+            <div
+              class="candy transition-all"
+              :class="[{ 'candy-pop': cell.justPopped, 'candy-squish': cell.justClicked, 'rotten': cell.type === 'rotten' }]"
+              :style="candyStyle(cell.type)"
+              @click="onCandyClick(idx)">
+              <span v-html="candySvg(cell.type)"></span>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="mt-4 text-sm text-gray-400">
+        Tap candies during the round to boost the multiplier slightly. Avoid the rotten candy — when it appears and the multiplier reaches crash point, round ends.
+      </div>
+    </div>
+
+    <!-- NOTIFICATION — SECOND -->
+    <transition name="fade">
+      <div v-if="notification.message" :class="['card p-4 rounded-xl mb-6 font-medium', notificationColor]">
+        {{ notification.message }}
+      </div>
+    </transition>
+
+    <!-- BET INPUT — THIRD -->
+    <div class="card p-5 rounded-2xl shadow-lg mb-6">
+      <label class="text-gray-300 text-sm">Enter Bet Amount (₦)</label>
+      <input type="number" v-model="betAmount" min="100"
+             class="mt-2 w-full p-3 rounded-xl bg-cbBg border border-gray-700 focus:border-cbPink outline-none"
+             placeholder="e.g. 1000" />
+
+      <div class="flex gap-3 mt-4">
+        <button v-if="!roundStarted && !roundOver" @click="startRound"
+                class="flex-1 py-3 rounded-full bg-cbPink text-black font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="play"></i> Start Round
+        </button>
+
+        <button v-if="roundStarted && !cashedOut && !crashed" @click="cashOut"
+                class="flex-1 py-3 rounded-full bg-cbMint text-black font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="dollar-sign"></i> Cash Out
+        </button>
+
+        <button v-if="roundOver" @click="newRound"
+                class="flex-1 py-3 rounded-full bg-infoBlue text-white font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="rotate-ccw"></i> Start New Round
+        </button>
+      </div>
+
+      <div class="text-xs text-gray-400 mt-3">Min bet: ₦100 • Wallet debited when round starts. Cash out before crash to win.</div>
+    </div>
+
+    <!-- Bottom nav -->
+    <div class="fixed bottom-4 left-0 right-0 px-4">
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-cbCard border border-gray-800 rounded-2xl p-3 flex justify-around">
+          <a href="/" class="flex flex-col items-center text-gray-400">
+            <i data-lucide="home"></i><span class="text-xs mt-1">Home</span>
+          </a>
+          <a href="/games" class="flex flex-col items-center text-gray-400">
+            <i data-lucide="gamepad-2"></i><span class="text-xs mt-1">Games</span>
+          </a>
+          <a href="/deposit" class="flex flex-col items-center text-cbPink">
+            <i data-lucide="arrow-big-up"></i><span class="text-xs mt-1">Deposit</span>
+          </a>
+          <a href="/profile" class="flex flex-col items-center text-gray-400">
+            <i data-lucide="user"></i><span class="text-xs mt-1">Profile</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP SCRIPT -->
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          token: "",
+          betAmount: "",
+          balance: 0.00,
+
+          // game state
+          multiplier: 1.00,
+          roundStarted: false,
+          cashedOut: false,
+          crashed: false,
+          roundOver: false,
+          crashPoint: 1.0,
+          interval: null,
+          spawnInterval: null,
+
+          // candy grid: 7 columns × 4 rows = 28 cells example
+          cols: 7,
+          rows: 4,
+          grid: [],
+
+          // rotten candy index (if any)
+          rottenIndex: -1,
+
+          notification: { message: "", type: "info" }
+        };
+      },
+
+      computed: {
+        notificationColor() {
+          return this.notification.type === "success" ? "bg-successGreen" : this.notification.type === "error" ? "bg-errorRed" : "bg-infoBlue";
+        },
+        displayBalance() {
+          return Number(this.balance).toFixed(2);
+        },
+        progressPercent() {
+          if (!this.roundStarted && !this.roundOver && !this.cashedOut) return 0;
+          const p = (this.multiplier / Math.max(this.crashPoint, 1)) * 100;
+          return Math.min(100, Math.max(0, p));
+        },
+        roundLabel() {
+          if (this.roundStarted) return 'In progress';
+          if (this.cashedOut) return 'Cashed';
+          if (this.crashed) return 'Crashed';
+          return 'Idle';
+        }
+      },
+
+      mounted() {
+        setTimeout(() => lucide.createIcons(), 120);
+        this.token = localStorage.getItem("casino_token") || "DEMO_TOKEN";
+        if (!localStorage.getItem("casino_token")) {
+          this.showNotification("No login token found — running in demo mode.", "info");
+          this.balance = 5000.00;
+        }
+        this.resetGrid();
+      },
+
+      methods: {
+        showNotification(message, type='info') {
+          this.notification.message = message;
+          this.notification.type = type;
+          setTimeout(() => { if (this.notification.message === message) this.notification.message = ""; }, 4500);
+        },
+
+        resetGrid() {
+          const total = this.cols * this.rows;
+          this.grid = Array.from({ length: total }).map(() => ({ type: this.randomCandyType(), justPopped: true, justClicked: false }));
+          // clear justPopped after short delay for pop animation
+          setTimeout(() => this.grid.forEach(c => c.justPopped = false), 250);
+          this.rottenIndex = -1;
+        },
+
+        randomCandyType() {
+          const types = ['red','blue','green','yellow','purple'];
+          return types[Math.floor(Math.random()*types.length)];
+        },
+
+        candyStyle(type) {
+          const map = {
+            red: 'background: linear-gradient(180deg,#FF6B6B,#FF3B3B);',
+            blue: 'background: linear-gradient(180deg,#6BB6FF,#2B8CFF);',
+            green: 'background: linear-gradient(180deg,#7EF0D3,#3ED9B9);',
+            yellow: 'background: linear-gradient(180deg,#FFE08A,#FFD36E);',
+            purple: 'background: linear-gradient(180deg,#CFAAFF,#A56BFF);',
+            rotten: 'background: linear-gradient(180deg,#6B6B6B,#3D3D3D); filter: saturate(.7) contrast(.9);'
+          };
+          return map[type] || map.red;
+        },
+
+        candySvg(type) {
+          // simple candy SVG icon per type
+          const circle = (c) => `<svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="10" fill="${c}" /></svg>`;
+          if (type === 'red') return `<svg width="28" height="28" viewBox="0 0 28 28"><path d="M2 14c0 6 6 12 12 12s12-6 12-12S20 2 14 2 2 8 2 14z" fill="#FF9AA2"/></svg>`;
+          if (type === 'blue') return `<svg width="28" height="28"><circle cx="14" cy="14" r="10" fill="#89CFF0"/></svg>`;
+          if (type === 'green') return `<svg width="28" height="28"><circle cx="14" cy="14" r="10" fill="#9FFFD6"/></svg>`;
+          if (type === 'yellow') return `<svg width="28" height="28"><circle cx="14" cy="14" r="10" fill="#FFD66B"/></svg>`;
+          if (type === 'purple') return `<svg width="28" height="28"><circle cx="14" cy="14" r="10" fill="#D1B3FF"/></svg>`;
+          if (type === 'rotten') return `<svg width="28" height="28"><path d="M2 14c0 6 6 12 12 12s12-6 12-12S20 2 14 2 2 8 2 14z" fill="#888"/></svg>`;
+          return circle('#FFF');
+        },
+
+        async startRound() {
+          if (!this.betAmount || Number(this.betAmount) < 100) {
+            return this.showNotification('Enter a valid bet amount (min ₦100)', 'error');
+          }
+
+          // reset states
+          this.multiplier = 1.00;
+          this.roundStarted = false;
+          this.cashedOut = false;
+          this.crashed = false;
+          this.roundOver = false;
+          this.rottenIndex = -1;
+          this.resetGrid();
+
+          // Debit wallet
+          const debitPayload = {
+            token: this.token,
+            amount: Number(this.betAmount),
+            reference: 'DEBIT' + Date.now(),
+            description: 'CandyBreak Bet'
+          };
+
+          this.showNotification('Debiting wallet…', 'info');
+
+          try {
+            const resp = await fetch('https://favour-amaaavl.xyz/api/fund/sub', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(debitPayload)
+            });
+            const data = await resp.json();
+            if (!data.status) {
+              return this.showNotification('Debit failed: ' + (data.message || 'Unknown'), 'error');
+            }
+            if (data.balance) this.balance = Number(data.balance);
+          } catch (err) {
+            this.showNotification('Debit request failed (network/demo) — running demo round.', 'info');
+          }
+
+          // determine crash point (heavy-tail-ish)
+          if (Math.random() < 0.6) {
+            this.crashPoint = +(1 + Math.random() * 4).toFixed(2);
+          } else {
+            const r = Math.random();
+            const v = Math.min(120, Math.max(1.05, Math.floor((1 / (1 - r)) * 100) / 100));
+            this.crashPoint = v;
+          }
+
+          // start round
+          this.roundStarted = true;
+          this.showNotification('Round started — break candies to boost multiplier!', 'info');
+
+          // start multiplier progression
+          this.runMultiplier();
+
+          // spawn rotten candy occasionally (after a short delay)
+          this.spawnInterval = setInterval(() => this.spawnRottenCandidate(), 2200 + Math.random()*2400);
+        },
+
+        runMultiplier() {
+          if (this.interval) clearInterval(this.interval);
+          this.interval = setInterval(() => {
+            // multiplier growth baseline
+            this.multiplier += 0.02 + (this.multiplier * 0.011);
+            if (!isFinite(this.multiplier) || this.multiplier > 1000) this.multiplier = 1000;
+
+            // if we reach crashPoint -> crash
+            if (this.multiplier >= this.crashPoint) {
+              this.triggerCrash();
+            }
+          }, 92);
+        },
+
+        spawnRottenCandidate() {
+          if (!this.roundStarted) return;
+          // pick random free index to turn rotten (but not immediately crash)
+          const freeIndices = this.grid.map((g,i)=> g.type !== 'rotten' ? i : -1).filter(i=>i>=0);
+          if (freeIndices.length === 0) return;
+          const pick = freeIndices[Math.floor(Math.random()*freeIndices.length)];
+          // small chance to spawn rotten now
+          if (Math.random() < 0.42) {
+            this.grid[pick].type = 'rotten';
+            this.rottenIndex = pick;
+            // rotten will remain; if player doesn't click it before crashPoint, it just contributes to risk visually
+          } else {
+            // else repopulate this cell with new candy popped
+            this.grid[pick] = { type: this.randomCandyType(), justPopped: true, justClicked: false };
+            setTimeout(()=> { if (this.grid[pick]) this.grid[pick].justPopped = false; }, 220);
+          }
+        },
+
+        onCandyClick(idx) {
+          if (!this.roundStarted || this.cashedOut || this.crashed) return;
+          const cell = this.grid[idx];
+          if (!cell) return;
+
+          // if rotten clicked — immediate crash (player broke rotten candy and it explodes)
+          if (cell.type === 'rotten') {
+            // player can optionally click rotten to cause an immediate crash (trade-off)
+            this.showNotification('You smashed a rotten candy — round ended!', 'error');
+            this.triggerCrash();
+            return;
+          }
+
+          // normal candy clicked: give small boost to multiplier and small "score"
+          this.grid[idx].justClicked = true;
+          // brief visual pop removal -> replace with new candy after small delay
+          setTimeout(() => {
+            this.grid[idx] = { type: this.randomCandyType(), justPopped: true, justClicked: false };
+            setTimeout(()=> { if (this.grid[idx]) this.grid[idx].justPopped = false; }, 200);
+          }, 180);
+
+          // reward: small immediate multiplier bump proportional to current multiplier
+          const boost = 0.01 + (Math.random() * 0.02); // small random boost
+          this.multiplier += boost;
+          // small feedback
+          this.showNotification(`+${(boost).toFixed(3)}x from candy!`, 'info');
+
+          // optional: small chance to spawn extra candy elsewhere
+          if (Math.random() < 0.12) {
+            const freeIndices = this.grid.map((g,i)=> i).filter(i=> i !== idx);
+            const p = freeIndices[Math.floor(Math.random()*freeIndices.length)];
+            this.grid[p] = { type: this.randomCandyType(), justPopped: true, justClicked:false };
+            setTimeout(()=> { if (this.grid[p]) this.grid[p].justPopped = false; }, 200);
+          }
+
+          // if multiplier reaches crashPoint due to boost, trigger crash
+          if (this.multiplier >= this.crashPoint) {
+            this.triggerCrash();
+          }
+        },
+
+        async cashOut() {
+          if (!this.roundStarted || this.cashedOut || this.crashed) return;
+          this.cashedOut = true;
+          if (this.interval) clearInterval(this.interval);
+          if (this.spawnInterval) clearInterval(this.spawnInterval);
+
+          const winAmount = Number(this.betAmount) * Number(this.multiplier);
+          const creditPayload = {
+            token: this.token,
+            amount: winAmount,
+            reference: 'CREDIT' + Date.now(),
+            description: `CandyBreak Cashout ${this.multiplier.toFixed(2)}x`
+          };
+
+          this.showNotification('Processing cashout…', 'info');
+          try {
+            const res = await fetch('https://favour-amaaavl.xyz/api/fund/add', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(creditPayload)
+            });
+            const data = await res.json();
+            if (data.status) {
+              if (data.balance) this.balance = Number(data.balance);
+              this.showNotification(`🎉 You won ₦${winAmount.toFixed(2)}!`, 'success');
+            } else {
+              this.showNotification('Credit failed: ' + (data.message || 'Unknown'), 'error');
+            }
+          } catch (err) {
+            this.showNotification('Credit request failed (network/demo): ' + err.message, 'error');
+          } finally {
+            this.roundOver = true;
+            this.roundStarted = false;
+          }
+        },
+
+        triggerCrash() {
+          if (this.interval) clearInterval(this.interval);
+          if (this.spawnInterval) clearInterval(this.spawnInterval);
+          this.crashed = true;
+          this.roundStarted = false;
+          this.roundOver = true;
+          // set multiplier exactly to crashPoint for clarity
+          this.multiplier = Number(this.crashPoint);
+          this.showNotification('Round crashed at ' + this.multiplier.toFixed(2) + 'x', 'error');
+        },
+
+        newRound() {
+          if (this.interval) clearInterval(this.interval);
+          if (this.spawnInterval) clearInterval(this.spawnInterval);
+          this.multiplier = 1.00;
+          this.roundStarted = false;
+          this.cashedOut = false;
+          this.crashed = false;
+          this.roundOver = false;
+          this.crashPoint = 1.0;
+          this.resetGrid();
+          this.showNotification('Ready for a new round — enter bet and start!', 'info');
+        }
+      }
+    }).mount('#app');
+</script>
+
+  <style>
+    .fade-enter-active, .fade-leave-active { transition: opacity .4s; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+  </style>
+</body>
+</html>
