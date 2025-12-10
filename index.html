@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -41,14 +42,16 @@
     <div class="px-5 py-6 flex items-center justify-between">
       <div>
         <div class="text-lg font-semibold">
-          Welcome back, <span class="font-bold text-casinoPurple">{{ user }}</span> 
+          Welcome back, <span class="font-bold text-casinoPurple">{{ user }}</span>
         </div>
         <div class="text-sm text-gray-400">Ready to play & win?</div>
       </div>
+
       <div class="flex gap-3">
         <span class="p-2 rounded-full bg-casinoCard shadow">
           <i data-lucide="wallet" class="text-gray-300"></i>
         </span>
+
         <span class="p-2 rounded-full bg-casinoCard shadow">
           <i data-lucide="bell" class="text-gray-300"></i>
         </span>
@@ -61,6 +64,7 @@
         <div class="text-sm opacity-80">Available Balance</div>
         <div class="text-3xl font-extrabold">{{ balance }}</div>
       </div>
+
       <button
         @click="deposit"
         class="w-full mt-4 py-3 rounded-full font-semibold bg-casinoPurple text-white flex justify-center items-center gap-2">
@@ -73,14 +77,20 @@
       <div class="text-lg font-semibold mb-3">🎮 Popular Casino Games</div>
 
       <div class="flex gap-4 overflow-x-auto pb-3">
-        
-        <div v-for="game in games" class="min-w-[150px] rounded-xl bg-casinoCard p-3 shadow-lg">
+
+        <!-- UPDATED: full clickable card -->
+        <a
+          v-for="game in games"
+          :href="game.link"
+          class="min-w-[150px] rounded-xl bg-casinoCard p-3 shadow-lg block">
+          
           <img :src="game.img" class="rounded-lg h-24 w-full object-cover" />
           <div class="mt-2 font-semibold text-sm">{{ game.name }}</div>
+
           <button class="mt-2 w-full py-1 text-xs rounded bg-casinoPurple text-white font-semibold">
             Play Now
           </button>
-        </div>
+        </a>
 
       </div>
     </div>
@@ -92,15 +102,16 @@
         <div class="text-sm text-casinoPurple font-semibold">View all</div>
       </div>
 
+      <!-- LIMIT to 7 items -->
       <div class="space-y-3">
-
         <div 
-          v-for="trx in recent"
-          class="flex items-center p-3 rounded-xl bg-casinoCard"
-        >
+          v-for="trx in recent.slice(0,7)"
+          class="flex items-center p-3 rounded-xl bg-casinoCard">
+
           <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-casinoPurple/20">
             <i data-lucide="dice-6" class="text-casinoPurple"></i>
           </div>
+
           <div class="ml-3 flex-1">
             <div class="text-sm font-semibold">{{ trx.details }}</div>
             <div class="text-xs text-gray-400">
@@ -108,14 +119,13 @@
             </div>
           </div>
 
-          <div 
+          <div
             class="text-sm font-semibold"
-            :class="trx.trx_type === '+' ? 'text-green-400' : trx.trx_type === '-' ? 'text-red-400' : 'text-yellow-400'"
-          >
+            :class="trx.trx_type === '+' ? 'text-green-400' : trx.trx_type === '-' ? 'text-red-400' : 'text-yellow-400'">
             {{ trx.trx_type }}{{ trx.amount.replace('NGN','₦') }}
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
 
@@ -127,14 +137,17 @@
       <i data-lucide="home" class="text-casinoPurple"></i>
       <span class="text-xs text-casinoPurple mt-1">Home</span>
     </a>
+
     <a href="/games" class="flex flex-col items-center">
       <i data-lucide="gamepad-2" class="text-gray-400"></i>
       <span class="text-xs text-gray-400 mt-1">Games</span>
     </a>
+
     <a href="/bets" class="flex flex-col items-center">
       <i data-lucide="bar-chart" class="text-gray-400"></i>
       <span class="text-xs text-gray-400 mt-1">Bets</span>
     </a>
+
     <a href="/profile" class="flex flex-col items-center">
       <i data-lucide="user" class="text-gray-400"></i>
       <span class="text-xs text-gray-400 mt-1">Profile</span>
@@ -152,23 +165,22 @@
           depositText: "Login Account",
           token: "",
           recent: [],
+
+          // UPDATED game links
           games: [
-            { name: "Slots Machine", img: "https://i.imgur.com/6q1zQ7L.jpeg" },
-            { name: "Lucky Dice", img: "https://i.imgur.com/RibCQ57.jpeg" },
-            { name: "Roulette Spin", img: "https://i.imgur.com/Eo1Tn3Z.jpeg" },
-            { name: "Blackjack 21", img: "https://i.imgur.com/AKWUp5y.jpeg" },
-            { name: "Fortune Wheel", img: "https://i.imgur.com/0zcQbFm.jpeg" }
+            { name: "Slots Machine", img: "https://i.imgur.com/6q1zQ7L.jpeg", link: "/slot" },
+            { name: "Lucky Dice", img: "https://i.imgur.com/RibCQ57.jpeg", link: "/roll" },
+            { name: "Roulette Spin", img: "https://i.imgur.com/Eo1Tn3Z.jpeg", link: "/roulette" },
+            { name: "Blackjack 21", img: "https://i.imgur.com/AKWUp5y.jpeg", link: "/blackjack" },
+            { name: "Fortune Wheel", img: "https://i.imgur.com/0zcQbFm.jpeg", link: "/xviator" }
           ]
         }
       },
 
       mounted() {
         lucide.createIcons();
-
         this.token = localStorage.getItem("casino_token");
-
         if (!this.token) return;
-
         this.fetchUser();
       },
 
@@ -189,7 +201,6 @@
               this.user = u.firstname;
               this.balance = "₦" + Number(u.balance).toLocaleString();
               this.depositText = "Deposit";
-
               this.recent = data.transactions;
 
             } else {
@@ -209,7 +220,6 @@
             return;
           }
 
-          // 🔥 UPDATED — redirect to deposit page
           window.location.href = "/deposit";
         }
       }
