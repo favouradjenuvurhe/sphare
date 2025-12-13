@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coinsphare – Terms & Conditions</title>
+
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: "#0C0A16",
+            casinoCard: "#151226",
+            casinoPurple: "#A56BFF",
+            casinoGlow: "#CFAAFF"
+          },
+          fontFamily: {
+            sans: ["Inter", "system-ui"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons -->
+  <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+</head>
+
+<body class="bg-casinoDark text-white font-sans antialiased">
+
+<div class="min-h-screen p-6 pb-24 max-w-3xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3 mb-6">
+    <span class="p-2 rounded-full bg-casinoCard">
+      <i data-lucide="file-text"></i>
+    </span>
+    <div>
+      <h1 class="text-xl font-bold">Terms & Conditions</h1>
+      <p class="text-sm text-gray-400">Coinsphare Casino</p>
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="bg-casinoCard rounded-2xl p-5 space-y-6 text-sm leading-relaxed text-gray-300">
+
+    <!-- Intro -->
+    <p>
+      Welcome to <span class="text-white font-semibold">Coinsphare</span>.
+      By accessing or using our platform, you agree to comply with and be bound
+      by the following Terms & Conditions. If you do not agree, please discontinue
+      using the platform.
+    </p>
+
+    <!-- Eligibility -->
+    <div>
+      <h2 class="text-white font-semibold mb-2">1. Eligibility</h2>
+      <p>
+        You must be legally permitted to participate in online gaming according
+        to your local laws. Coinsphare is intended strictly for entertainment purposes.
+      </p>
+    </div>
+
+    <!-- Games -->
+    <div>
+      <h2 class="text-white font-semibold mb-2">2. Games Available</h2>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Slots</li>
+        <li>Dice</li>
+        <li>Table Games</li>
+        <li>Card Games</li>
+        <li>Live Casino</li>
+        <li>Shape Spin</li>
+        <li>Xviator</li>
+        <li>Mines</li>
+        <li>Candy Break</li>
+        <li>Kicker Ball</li>
+      </ul>
+    </div>
+
+    <!-- Deposits -->
+    <div>
+      <h2 class="text-white font-semibold mb-2">3. Deposits</h2>
+      <p>
+        The minimum deposit amount on Coinsphare is
+        <span class="text-white font-semibold">₦3,000</span>.
+        Deposits are credited instantly once confirmed.
+      </p>
+    </div>
+
+    <!-- Withdrawals -->
+    <div>
+      <h2 class="text-white font-semibold mb-2">4. Withdrawals</h2>
+      <p>
+        The minimum withdrawal amount is
+        <span class="text-white font-semibold">₦5,000</span>.
+        Withdrawal requests are processed manually and may take some time
+        depending on verification and payment processing.
+      </p>
+    </div>
+
+    <!-- User Info -->
+    <div>
+      <h2 class="text-white font-semibold mb-2">5. User Information</h2>
+      <p>
+        Coinsphare respects user privacy. We do
+        <span class="text-white font-semibold">not request hard or sensitive personal information</span>
+        beyond what is necessary to process payments and maintain platform security.
+      </p>
+    </div>
+
+    <!-- Fair Play -->
+    <div>
+      <h2 class="text-white font-semibold mb-2">6. Fair Play</h2>
+      <p>
+        Any attempt to exploit bugs, manipulate games, abuse bonuses, or engage
+        in fraudulent activity may result in account suspension or termination
+        without prior notice.
+      </p>
+    </div>
+
+    <!-- Liability -->
+    <div>
+      <h2 class="text-white font-semibold mb-2">7. Liability</h2>
+      <p>
+        Coinsphare is not responsible for losses incurred during gameplay.
+        All games are played at the user’s own risk.
+      </p>
+    </div>
+
+    <!-- Updates -->
+    <div>
+      <h2 class="text-white font-semibold mb-2">8. Changes to Terms</h2>
+      <p>
+        Coinsphare reserves the right to modify these Terms & Conditions at any time.
+        Continued use of the platform signifies acceptance of any updates.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-xs text-gray-500 pt-4 border-t border-gray-700">
+      © 2025 Coinsphare. All rights reserved.
+    </p>
+
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+  <a href="/" class="flex flex-col items-center">
+    <i data-lucide="home" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Home</span>
+  </a>
+  <a href="/games" class="flex flex-col items-center">
+    <i data-lucide="gamepad-2" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Games</span>
+  </a>
+  <a href="/bets" class="flex flex-col items-center">
+    <i data-lucide="layers" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Bets</span>
+  </a>
+  <a href="/profile" class="flex flex-col items-center">
+    <i data-lucide="user" class="text-gray-400"></i>
+    <span class="text-xs text-gray-400 mt-1">Profile</span>
+  </a>
+</div>
+
+<script>
+  setTimeout(() => lucide.createIcons(), 100);
+</script>
+
+</body>
+        </html>
