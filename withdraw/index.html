@@ -1,1 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Withdraw Funds</title>
 
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: "#0C0A16",
+            casinoCard: "#151226",
+            casinoPurple: "#A56BFF",
+            successGreen: "#28a745",
+            errorRed: "#dc3545",
+            infoBlue: "#0d6efd"
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+
+  <!-- Lucide -->
+  <script defer src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+</head>
+
+<body class="bg-casinoDark text-white font-sans antialiased">
+<div id="app" class="min-h-screen p-6 pb-24">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="text-lg font-semibold">Withdraw Funds</div>
+      <div class="text-sm text-gray-400">Send money to your bank account</div>
+    </div>
+    <span class="p-2 rounded-full bg-casinoCard shadow">
+      <i data-lucide="banknote"></i>
+    </span>
+  </div>
+
+  <!-- Withdrawal Form -->
+  <div class="bg-casinoCard p-5 rounded-2xl shadow-lg space-y-4">
+
+    <!-- Amount -->
+    <div>
+      <label class="text-sm text-gray-400">Amount (₦)</label>
+      <input type="number" v-model="amount"
+        class="w-full mt-1 p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
+        placeholder="e.g. 5000">
+    </div>
+
+    <!-- Bank -->
+    <div>
+      <label class="text-sm text-gray-400">Select Bank</label>
+      <select v-model="bank"
+        class="w-full mt-1 p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none">
+        <option value="">Select bank</option>
+        <option v-for="b in banks" :key="b.bankCode" :value="b.bankName">
+          {{ b.bankName }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Account Number -->
+    <div>
+      <label class="text-sm text-gray-400">Account Number</label>
+      <input type="text" v-model="account_number"
+        class="w-full mt-1 p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
+        placeholder="0123456789">
+    </div>
+
+    <!-- Account Name -->
+    <div>
+      <label class="text-sm text-gray-400">Account Name</label>
+      <input type="text" v-model="account_name"
+        class="w-full mt-1 p-3 rounded-xl bg-casinoDark border border-gray-700 focus:border-casinoPurple outline-none"
+        placeholder="John Doe">
+    </div>
+
+    <!-- Submit -->
+    <button @click="submitWithdrawal"
+      class="w-full py-3 rounded-full bg-casinoPurple font-semibold flex justify-center items-center gap-2">
+      <i data-lucide="arrow-big-down"></i>
+      Withdraw
+    </button>
+  </div>
+
+  <!-- Notification -->
+  <transition name="fade">
+    <div v-if="notification.message"
+      :class="['mt-4 p-4 rounded-lg font-medium',
+        notification.type === 'success' ? 'bg-successGreen' :
+        notification.type === 'error' ? 'bg-errorRed' : 'bg-infoBlue']">
+      {{ notification.message }}
+    </div>
+  </transition>
+
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      token: "",
+      banks: [],
+      amount: "",
+      bank: "",
+      account_name: "",
+      account_number: "",
+      notification: { message: "", type: "info" }
+    };
+  },
+
+  mounted() {
+    lucide.createIcons();
+    this.token = localStorage.getItem("casino_token");
+
+    if (!this.token) {
+      alert("Login required");
+      window.location.href = "/login";
+    }
+
+    this.fetchBanks();
+  },
+
+  methods: {
+    async fetchBanks() {
+      try {
+        const res = await fetch("https://pulsepoint-plugin.vercel.app/api/banks.json");
+        const data = await res.json();
+        if (data?.ok) this.banks = data.data;
+      } catch {
+        this.showNotification("Failed to load banks", "error");
+      }
+    },
+
+    async submitWithdrawal() {
+      if (!this.amount || this.amount < 100)
+        return this.showNotification("Minimum withdrawal is ₦100", "error");
+
+      if (!this.bank || !this.account_name || !this.account_number)
+        return this.showNotification("All fields are required", "error");
+
+      this.showNotification("Submitting withdrawal request…", "info");
+
+      try {
+        const res = await fetch("https://favour-amaaavl.xyz/api/withdrawal", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + this.token
+          },
+          body: JSON.stringify({
+            amount: Number(this.amount),
+            bank_name: this.bank,
+            account_name: this.account_name,
+            account_number: this.account_number
+          })
+        });
+
+        const data = await res.json();
+
+        if (data?.status === true) {
+          this.showNotification("Withdrawal submitted successfully 🎉", "success");
+          setTimeout(() => window.location.href = "/", 2000);
+        } else {
+          this.showNotification(data?.message || "Withdrawal failed", "error");
+        }
+
+      } catch (e) {
+        this.showNotification("Request failed", "error");
+      }
+    },
+
+    showNotification(msg, type) {
+      this.notification.message = msg;
+      this.notification.type = type;
+      setTimeout(() => this.notification.message = "", 4000);
+    }
+  }
+}).mount("#app");
+</script>
+
+<style>
+.fade-enter-active, .fade-leave-active { transition: opacity .5s }
+.fade-enter-from, .fade-leave-to { opacity: 0 }
+</style>
+
+</body>
+</html>
