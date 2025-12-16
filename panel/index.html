@@ -1,1 +1,117 @@
+<!doctype html>
+<html lang="en">  
+<head>  
+  <meta charset="utf-8" />  
+  <meta name="viewport" content="width=device-width,initial-scale=1" />  
+  <title>Admin Login</title>  
 
+  <!-- Inter font -->  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">  
+
+  <!-- Tailwind CDN -->  
+  <script src="https://cdn.tailwindcss.com"></script>  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: '#0C0A16',
+            casinoCard: '#151226',
+            casinoPurple: '#A56BFF',
+            casinoGlow: '#CFAAFF'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui'] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+</head>  
+
+<body class="bg-casinoDark text-white font-sans flex items-center justify-center min-h-screen px-6">
+
+<div id="app" class="w-full max-w-md">
+
+  <!-- Logo / Header -->
+  <div class="text-center mb-10">  
+      <h1 class="text-3xl font-extrabold text-casinoPurple">Admin Login</h1>  
+      <p class="text-gray-400 mt-1">Enter your credentials</p>  
+  </div>
+
+  <!-- LOGIN CARD -->
+  <div class="bg-casinoCard p-8 rounded-2xl shadow-2xl">
+
+    <!-- Username -->  
+    <label class="text-sm text-gray-300">Username</label>  
+    <input v-model="login"
+      class="w-full mt-1 mb-4 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Enter username">  
+
+    <!-- Password -->  
+    <label class="text-sm text-gray-300">Password</label>  
+    <input v-model="password" type="password"
+      class="w-full mt-1 mb-6 p-3 rounded-lg bg-[#1c1a2d] text-white outline-none"
+      placeholder="Enter password">  
+
+    <!-- Login Button -->  
+    <button @click="submitLogin"
+      class="w-full py-3 rounded-xl bg-casinoPurple font-semibold text-white flex justify-center items-center gap-2"
+      :disabled="loading">  
+      <i data-lucide="log-in"></i>  
+      <span v-if="!loading">Login</span>  
+      <span v-else>Logging...</span>  
+    </button>  
+
+    <!-- Error -->  
+    <div v-if="error" class="mt-4 text-center text-red-400 text-sm">  
+      {{ error }}  
+    </div>
+
+  </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      login: "",
+      password: "",
+      error: "",
+      loading: false
+    }
+  },
+  mounted() {
+    lucide.createIcons();
+  },
+  methods: {
+    submitLogin() {
+      this.error = "";
+      if (!this.login || !this.password) {
+        this.error = "All fields are required";
+        return;
+      }
+
+      this.loading = true;
+
+      // Hardcoded admin login
+      if (this.login === "admin" && this.password === "password") {
+        localStorage.setItem("admin_token", "hardcore");
+        localStorage.setItem("admin_user", JSON.stringify({ username: "admin" }));
+        window.location.href = "/panel/dashboard"; // redirect
+      } else {
+        this.error = "Invalid username or password";
+        this.loading = false;
+      }
+    }
+  }
+}).mount("#app");
+</script>
+
+</body>  
+  </html>
