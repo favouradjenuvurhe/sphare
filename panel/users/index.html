@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Users - Admin Panel</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            casinoDark: '#0C0A16',
+            casinoCard: '#151226',
+            casinoPurple: '#A56BFF',
+            casinoGlow: '#CFAAFF'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui'] }
+        }
+      }
+    }
+  </script>
+
+  <script src="https://unpkg.com/lucide@0.258.0/dist/umd/lucide.js"></script>
+  <script src="https://unpkg.com/vue@3.4.2/dist/vue.global.prod.js"></script>
+</head>
+
+<body class="bg-casinoDark font-sans text-white">
+
+<div id="app" class="min-h-screen pb-24">
+
+  <!-- Header -->
+  <div class="px-5 py-6">
+    <div class="text-lg font-semibold">
+      Users —
+      <span class="text-casinoPurple font-bold">{{ users.length }}</span>
+    </div>
+    <div class="text-sm text-gray-400">
+      Full registered users list
+    </div>
+  </div>
+
+  <!-- Users Cards -->
+  <div class="px-5 space-y-4">
+
+    <div v-if="loading" class="text-gray-400 text-sm">
+      Loading users...
+    </div>
+
+    <div v-if="!loading && users.length === 0" class="text-gray-400 text-sm">
+      No users found.
+    </div>
+
+    <!-- User Card -->
+    <div v-for="u in users" :key="u.id"
+      class="bg-casinoCard rounded-2xl p-4 shadow-lg border border-white/5">
+
+      <!-- Top -->
+      <div class="flex justify-between items-center mb-3">
+        <div class="font-semibold text-lg">
+          {{ u.firstname }} {{ u.lastname }}
+        </div>
+        <span
+          class="text-xs px-2 py-1 rounded-full"
+          :class="u.status == 1 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'">
+          {{ u.status == 1 ? 'Active' : 'Disabled' }}
+        </span>
+      </div>
+
+      <!-- Details -->
+      <div class="text-sm space-y-1 text-gray-300">
+        <div><b>Username:</b> {{ u.username }}</div>
+        <div><b>Email:</b> {{ u.email }}</div>
+        <div><b>Mobile:</b> {{ u.mobile }}</div>
+        <div><b>Site:</b> {{ u.site_domain }}</div>
+      </div>
+
+      <!-- Verifications -->
+      <div class="grid grid-cols-4 gap-2 mt-3 text-xs text-center">
+        <div class="bg-black/30 rounded-lg py-2">
+          EV<br><span :class="u.ev ? 'text-green-400' : 'text-red-400'">
+            {{ u.ev ? 'Yes' : 'No' }}
+          </span>
+        </div>
+        <div class="bg-black/30 rounded-lg py-2">
+          SV<br><span :class="u.sv ? 'text-green-400' : 'text-red-400'">
+            {{ u.sv ? 'Yes' : 'No' }}
+          </span>
+        </div>
+        <div class="bg-black/30 rounded-lg py-2">
+          TV<br><span :class="u.tv ? 'text-green-400' : 'text-red-400'">
+            {{ u.tv ? 'Yes' : 'No' }}
+          </span>
+        </div>
+        <div class="bg-black/30 rounded-lg py-2">
+          TS<br><span :class="u.ts ? 'text-green-400' : 'text-red-400'">
+            {{ u.ts ? 'Yes' : 'No' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="text-xs text-gray-500 mt-3">
+        Created: {{ formatDate(u.created_at) }}<br>
+        Updated: {{ formatDate(u.updated_at) }}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="fixed bottom-0 w-full bg-casinoCard border-t border-gray-700 flex justify-around py-3">
+  <a href="/panel/dashboard" class="flex flex-col items-center text-gray-400">
+    <i data-lucide="home"></i>
+    <span class="text-xs mt-1">Dashboard</span>
+  </a>
+  <a href="/panel/users" class="flex flex-col items-center text-casinoPurple">
+    <i data-lucide="users"></i>
+    <span class="text-xs mt-1">Users</span>
+  </a>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      users: [],
+      loading: true,
+      siteDomain: "coinsphare.online"
+    }
+  },
+  mounted() {
+    lucide.createIcons();
+    this.fetchUsers();
+  },
+  methods: {
+    async fetchUsers() {
+      try {
+        const res = await fetch(
+          `https://favour-amaaavl.xyz/api/ur-users?site_domain=${this.siteDomain}`
+        );
+        const data = await res.json();
+        if (data.status) {
+          this.users = data.data;
+        }
+      } catch (e) {
+        this.users = [];
+      } finally {
+        this.loading = false;
+      }
+    },
+    formatDate(date) {
+      return new Date(date).toLocaleDateString();
+    }
+  }
+}).mount('#app');
+</script>
+
+</body>
+</html>
