@@ -37,25 +37,33 @@
 <div id="app" class="min-h-screen pb-20">
 
   <!-- Header -->
-  <div class="px-5 py-6 flex items-center justify-between">
-    <div>
-      <div class="text-lg font-semibold">
-        Admin Panel: <span class="font-bold text-casinoPurple">{{ adminUser.username }}</span>
-      </div>
-      <div class="text-sm text-gray-400">Overview of site users & balances</div>
+  <div class="px-5 py-6">
+    <div class="text-lg font-semibold">
+      Admin Panel:
+      <span class="font-bold text-casinoPurple">{{ adminUser.username }}</span>
+    </div>
+    <div class="text-sm text-gray-400">
+      Overview of site users & balances
     </div>
   </div>
 
-  <!-- Summary Cards Row -->
+  <!-- Summary Cards -->
   <div class="px-5 flex gap-4">
+
+    <!-- Total Users (unchanged) -->
     <div class="flex-1 rounded-2xl p-5 bg-gradient-to-r from-casinoPurple to-casinoGlow shadow-xl text-center">
       <div class="text-sm opacity-80">Total Users</div>
       <div class="text-3xl font-extrabold">{{ users.length }}</div>
     </div>
-    <div class="flex-1 rounded-2xl p-5 bg-gradient-to-r from-casinoPurple to-casinoGlow shadow-xl text-center">
-      <div class="text-sm opacity-80">Total Balance</div>
-      <div class="text-3xl font-extrabold">₦{{ totalBalance.toLocaleString() }}</div>
+
+    <!-- Total Balance (reduced size) -->
+    <div class="flex-1 rounded-2xl p-3 bg-gradient-to-r from-casinoPurple to-casinoGlow shadow-xl text-center">
+      <div class="text-xs opacity-80">Total Balance</div>
+      <div class="text-xl font-bold leading-tight">
+        ₦{{ totalBalance.toLocaleString() }}
+      </div>
     </div>
+
   </div>
 
 </div>
@@ -90,7 +98,6 @@ createApp({
       token: localStorage.getItem("admin_token"),
       siteDomain: "coinsphare.online",
       users: [],
-      loading: true,
       totalBalance: 0
     }
   },
@@ -105,20 +112,19 @@ createApp({
   methods: {
     async fetchUsers() {
       try {
-        const res = await fetch(`https://favour-amaaavl.xyz/api/ur-users?site_domain=${this.siteDomain}`);
+        const res = await fetch(
+          `https://favour-amaaavl.xyz/api/ur-users?site_domain=${this.siteDomain}`
+        );
         const data = await res.json();
-        if (data.status === true) {
+        if (data.status) {
           this.users = data.data;
-          this.totalBalance = this.users.reduce((sum, u) => sum + Number(u.balance), 0);
-        } else {
-          this.users = [];
-          this.totalBalance = 0;
+          this.totalBalance = this.users.reduce(
+            (sum, u) => sum + Number(u.balance), 0
+          );
         }
-      } catch(e) {
+      } catch (e) {
         this.users = [];
         this.totalBalance = 0;
-      } finally {
-        this.loading = false;
       }
     }
   }
